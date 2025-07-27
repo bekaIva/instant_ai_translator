@@ -1,0 +1,8 @@
+/home/beka/Documents/GitHub/instant_ai_translator/native/build/CMakeFiles/instant_translator_native.dir
+/home/beka/Documents/GitHub/instant_ai_translator/native/build/CMakeFiles/instant_translator_test.dir
+/home/beka/Documents/GitHub/instant_ai_translator/native/build/CMakeFiles/edit_cache.dir
+/home/beka/Documents/GitHub/instant_ai_translator/native/build/CMakeFiles/rebuild_cache.dir
+/home/beka/Documents/GitHub/instant_ai_translator/native/build/CMakeFiles/list_install_components.dir
+/home/beka/Documents/GitHub/instant_ai_translator/native/build/CMakeFiles/install.dir
+/home/beka/Documents/GitHub/instant_ai_translator/native/build/CMakeFiles/install/local.dir
+/home/beka/Documents/GitHub/instant_ai_translator/native/build/CMakeFiles/install/strip.dir
