@@ -1,0 +1,21 @@
+{
+	"servers": {
+		"fetcher": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"fetcher-mcp"
+			],
+			"type": "stdio"
+		},
+		"context7": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@upstash/context7-mcp"
+			],
+			"type": "stdio"
+		}
+	},
+	"inputs": []
+}
