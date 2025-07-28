@@ -251,10 +251,9 @@ class _ProductionMainScreenState extends State<ProductionMainScreen> {
                         const Spacer(),
                         if (_recentActions.isNotEmpty)
                           TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _recentActions.clear();
-                              });
+                            onPressed: () async {
+                              // Clear both local state and service data
+                              await _clearRecentActions();
                             },
                             child: const Text('Clear'),
                           ),
@@ -344,10 +343,9 @@ class _ProductionMainScreenState extends State<ProductionMainScreen> {
                         const Spacer(),
                         if (_logs.isNotEmpty)
                           TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _logs.clear();
-                              });
+                            onPressed: () async {
+                              // Clear both local state and service data
+                              await _clearLogs();
                             },
                             child: const Text('Clear'),
                           ),
@@ -424,6 +422,22 @@ class _ProductionMainScreenState extends State<ProductionMainScreen> {
     return '${timestamp.hour.toString().padLeft(2, '0')}:'
            '${timestamp.minute.toString().padLeft(2, '0')}:'
            '${timestamp.second.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _clearRecentActions() async {
+    // Clear both local state and service persistent data
+    _menuService.clearActions();
+    setState(() {
+      _recentActions.clear();
+    });
+  }
+
+  Future<void> _clearLogs() async {
+    // Clear both local state and service persistent data
+    _menuService.clearLogs();
+    setState(() {
+      _logs.clear();
+    });
   }
 
   @override

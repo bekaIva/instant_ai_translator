@@ -290,6 +290,11 @@ class ProductionContextMenuService {
     }
   }
 
+  // Public method to process text without system integration (for reprocessing from activity monitor)
+  Future<String> processTextOnly(String text, String operation) async {
+    return await _processText(text, operation);
+  }
+
   // Fallback processing method (original mock implementations)
   String _fallbackProcessText(String text, String operation) {
     // Extract operation type from the detailed instruction
@@ -559,5 +564,19 @@ class ProductionContextMenuService {
     if (!_logController.isClosed) _logController.close();
 
     _initialized = false;
+  }
+
+  // Clear persistent data methods
+  void clearActions() {
+    _actions.clear();
+  }
+
+  void clearLogs() {
+    _logs.clear();
+  }
+
+  void clearAllData() {
+    clearActions();
+    clearLogs();
   }
 }
