@@ -5,6 +5,7 @@
 #include <gdk/gdkx.h>
 #include <string.h>
 #include <stdlib.h>
+#include <cstdlib>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -101,20 +102,114 @@ static char* get_selection_via_xclip() {
     return result;
 }
 
-// Get current mouse position
+// Get current mouse position with proper scaling support
 static void get_mouse_position(int* x, int* y) {
+    printf("🔍 get_mouse_position() called - detecting scaling...\n");
+    
+    // Get raw X11 coordinates first
     Window root_return, child_return;
     int root_x, root_y, win_x, win_y;
     unsigned int mask_return;
     
-    if (XQueryPointer(display, root_window, &root_return, &child_return,
-                     &root_x, &root_y, &win_x, &win_y, &mask_return)) {
-        *x = root_x;
-        *y = root_y;
-    } else {
+    if (!XQueryPointer(display, root_window, &root_return, &child_return,
+                      &root_x, &root_y, &win_x, &win_y, &mask_return)) {
         *x = 0;
         *y = 0;
+        printf("❌ Failed to get mouse position\n");
+        return;
     }
+    
+    printf("📍 Raw X11 coordinates: (%d, %d)\n", root_x, root_y);
+    
+    // Check for display scaling and adjust coordinates accordingly
+    GdkDisplay* gdk_display = gdk_display_get_default();
+    if (gdk_display) {
+        printf("✅ GDK display found, checking scaling...\n");
+        
+        // Get the monitor at the cursor position
+        GdkMonitor* monitor = gdk_display_get_monitor_at_point(gdk_display, root_x, root_y);
+        if (monitor) {
+            int scale_factor = gdk_monitor_get_scale_factor(monitor);
+            printf("🔍 Monitor scale factor: %d at position (%d, %d)\n", scale_factor, root_x, root_y);
+            
+            if (scale_factor > 1) {
+                // For integer scaling (2x, 3x, etc.), divide by scale factor
+                *x = root_x / scale_factor;
+                *y = root_y / scale_factor;
+                printf("🔧 Integer scaling: (%d, %d) -> (%d, %d) (÷%d)\n", 
+                       root_x, root_y, *x, *y, scale_factor);
+                return;
+            }
+        } else {
+            printf("⚠️  Could not get monitor at cursor position\n");
+        }
+        
+        // Try to detect fractional scaling (125%, 150%, etc.)
+        // Check if GDK_SCALE environment variable is set
+        const char* gdk_scale = getenv("GDK_SCALE");
+        if (gdk_scale) {
+            double scale = atof(gdk_scale);
+            if (scale > 1.0) {
+                *x = (int)(root_x / scale);
+                *y = (int)(root_y / scale);
+                printf("🔧 GDK_SCALE: (%d, %d) -> (%d, %d) (÷%.2f)\n", 
+                       root_x, root_y, *x, *y, scale);
+                return;
+            }
+        }
+        
+        // Check QT_SCALE_FACTOR for Qt applications
+        const char* qt_scale = getenv("QT_SCALE_FACTOR");
+        if (qt_scale) {
+            double scale = atof(qt_scale);
+            if (scale > 1.0) {
+                *x = (int)(root_x / scale);
+                *y = (int)(root_y / scale);
+                printf("🔧 QT_SCALE: (%d, %d) -> (%d, %d) (÷%.2f)\n", 
+                       root_x, root_y, *x, *y, scale);
+                return;
+            }
+        }
+        
+        printf("🔍 Checking DPI settings...\n");
+        // Try to detect scaling from Xft.dpi
+        char* xrdb_output = NULL;
+        FILE* pipe = popen("xrdb -query | grep dpi", "r");
+        if (pipe) {
+            char buffer[256];
+            if (fgets(buffer, sizeof(buffer), pipe)) {
+                xrdb_output = strdup(buffer);
+                printf("📊 DPI query result: %s", xrdb_output);
+            }
+            pclose(pipe);
+        }
+        
+        if (xrdb_output) {
+            // Parse "Xft.dpi: 120" format
+            char* dpi_str = strstr(xrdb_output, ":");
+            if (dpi_str) {
+                int dpi = atoi(dpi_str + 1);
+                printf("📊 Detected DPI: %d\n", dpi);
+                if (dpi > 96) {
+                    double scale = (double)dpi / 96.0;
+                    *x = (int)(root_x / scale);
+                    *y = (int)(root_y / scale);
+                    printf("🔧 DPI scaling: (%d, %d) -> (%d, %d) (DPI: %d, ÷%.2f)\n", 
+                           root_x, root_y, *x, *y, dpi, scale);
+                    free(xrdb_output);
+                    return;
+                }
+            }
+            free(xrdb_output);
+        }
+    } else {
+        printf("❌ No GDK display found\n");
+    }
+    
+    // No scaling detected, use raw coordinates
+    *x = root_x;
+    *y = root_y;
+    printf("⚠️  No scaling detected, using raw X11: (%d, %d)\n", *x, *y);
 }
 
 // Selection monitoring thread
