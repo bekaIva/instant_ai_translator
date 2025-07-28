@@ -220,8 +220,8 @@ class ProductionContextMenuService {
         _addLog('❌ Failed to replace text: ${error ?? 'Unknown error'}');
       }
 
-      // Emit action event
-      _actionController.add(action);
+      // Store action persistently and emit to stream
+      _addAction(action);
     } catch (e) {
       _addLog('❌ Error processing menu action: $e');
 
@@ -234,7 +234,7 @@ class ProductionContextMenuService {
         error: e.toString(),
       );
 
-      _actionController.add(action);
+      _addAction(action);
     }
   }
 
@@ -411,10 +411,8 @@ class ProductionContextMenuService {
         success: true,
       );
 
-      // Add to action stream for UI feedback (only if not closed)
-      if (!_actionController.isClosed) {
-        _actionController.add(action);
-      }
+      // Store action persistently and emit to stream
+      _addAction(action);
 
       _addLog('✅ Test completed: "$sampleText" → "$processedText"');
     } catch (e) {
@@ -429,7 +427,7 @@ class ProductionContextMenuService {
           timestamp: DateTime.now(),
           success: false,
         );
-        _actionController.add(action);
+        _addAction(action);
       }
     }
   }
