@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Native build artifacts
+native/build/
+*.o
+*.so.*
+devtools_options.yaml
