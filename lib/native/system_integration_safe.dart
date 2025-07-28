@@ -7,9 +7,11 @@ final DynamicLibrary _nativeLib = () {
   if (Platform.isLinux) {
     // Try multiple paths for the native library
     final possiblePaths = [
-      'lib/native/libs/libinstant_translator_native.so',
-      './lib/native/libs/libinstant_translator_native.so',
-      'libinstant_translator_native.so',
+      'lib/native/libs/libinstant_translator_native.so',  // Development mode
+      './lib/native/libs/libinstant_translator_native.so', // Development mode with relative path
+      'lib/libinstant_translator_native.so',              // Release bundle mode
+      './lib/libinstant_translator_native.so',            // Release bundle with relative path
+      'libinstant_translator_native.so',                  // System library path
     ];
     
     for (final path in possiblePaths) {
