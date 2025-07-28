@@ -1,5 +1,6 @@
 #include "context_menu_injector.h"
 #include "text_selection_monitor.h"
+#include "text_replacement.h"
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <X11/Xlib.h>
@@ -118,20 +119,52 @@ static void on_menu_button_clicked(GtkWidget* button, gpointer data) {
     
     if (current_selection) {
         printf("Processing selection: %s\n", current_selection->text);
-        // Here we would call the AI service
-        // For now, just show what would happen
-        char message[512];
-        snprintf(message, sizeof(message), 
-                "Would process '%s' with AI action: %s", 
-                current_selection->text, menu_id);
         
-        GtkWidget* dialog = gtk_message_dialog_new(NULL,
-            GTK_DIALOG_MODAL,
-            GTK_MESSAGE_INFO,
-            GTK_BUTTONS_OK,
-            "%s", message);
-        gtk_dialog_run(GTK_DIALOG(dialog));
-        gtk_widget_destroy(dialog);
+        // Call the callback if registered
+        if (menu_action_callback) {
+            printf("Calling menu action callback for: %s\n", menu_id);
+            menu_action_callback(menu_id, current_selection);
+        } else {
+            // Fallback: do basic text processing and replacement directly
+            printf("No callback registered, doing direct text replacement\n");
+            
+            // Also write action to file for Flutter to pick up
+            FILE* action_file = fopen("/tmp/instant_translator_action.txt", "w");
+            if (action_file) {
+                fprintf(action_file, "%s|%s\n", menu_id, current_selection->text);
+                fclose(action_file);
+                printf("Action written to file for Flutter pickup\n");
+            }
+            
+            // Simple AI simulation
+            char processed_text[1024];
+            if (strcmp(menu_id, "translate") == 0) {
+                // Simple translation simulation
+                snprintf(processed_text, sizeof(processed_text), "[TRANSLATED] %s", current_selection->text);
+            } else if (strcmp(menu_id, "improve") == 0) {
+                snprintf(processed_text, sizeof(processed_text), "[IMPROVED] %s", current_selection->text);
+            } else if (strcmp(menu_id, "summarize") == 0) {
+                snprintf(processed_text, sizeof(processed_text), "[SUMMARY] %s", current_selection->text);
+            } else if (strcmp(menu_id, "explain") == 0) {
+                snprintf(processed_text, sizeof(processed_text), "[EXPLAINED] %s", current_selection->text);
+            } else if (strcmp(menu_id, "rewrite") == 0) {
+                snprintf(processed_text, sizeof(processed_text), "[REWRITTEN] %s", current_selection->text);
+            } else if (strcmp(menu_id, "expand") == 0) {
+                snprintf(processed_text, sizeof(processed_text), "[EXPANDED] %s", current_selection->text);
+            } else {
+                snprintf(processed_text, sizeof(processed_text), "[PROCESSED] %s", current_selection->text);
+            }
+            
+            printf("Replacing text with: %s\n", processed_text);
+            
+            // Do the actual text replacement
+            int result = replace_text_via_clipboard(processed_text);
+            if (result == STATUS_SUCCESS) {
+                printf("✅ Text replacement successful!\n");
+            } else {
+                printf("❌ Text replacement failed with code: %d\n", result);
+            }
+        }
     }
     
     gtk_widget_destroy(window);

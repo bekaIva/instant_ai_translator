@@ -224,7 +224,7 @@ class SystemIntegration {
   bool _initialized = false;
 
   // Initialize the system integration
-  Future<bool> initialize() async {
+  Future<bool> initialize({bool enableCallbacks = false}) async {
     if (_initialized) return true;
 
     // Check system compatibility first
@@ -232,19 +232,30 @@ class SystemIntegration {
       return false;
     }
 
-    // Set up native callbacks
-    _selectionCallbackPtr = Pointer.fromFunction<SelectionCallbackNative>(_onSelectionChangedNative);
-    _menuActionCallbackPtr = Pointer.fromFunction<MenuActionCallbackNative>(_onMenuActionNative);
-
     // Initialize native system
     int result = _initSystemHooks();
     if (result != StatusCode.success) {
       return false;
     }
 
-    // Set callbacks
-    _setSelectionCallback(_selectionCallbackPtr);
-    _setMenuActionCallback(_menuActionCallbackPtr);
+    // Only set up callbacks if explicitly requested and safe
+    if (enableCallbacks) {
+      try {
+        // Set up native callbacks
+        _selectionCallbackPtr = Pointer.fromFunction<SelectionCallbackNative>(_onSelectionChangedNative);
+        _menuActionCallbackPtr = Pointer.fromFunction<MenuActionCallbackNative>(_onMenuActionNative);
+
+        // Set callbacks
+        _setSelectionCallback(_selectionCallbackPtr);
+        _setMenuActionCallback(_menuActionCallbackPtr);
+        print('✅ Callbacks enabled');
+      } catch (e) {
+        print('⚠️  Callback setup failed: $e');
+        print('   Continuing without callbacks');
+      }
+    } else {
+      print('📋 Running without callbacks to avoid isolate issues');
+    }
 
     _initialized = true;
     return true;

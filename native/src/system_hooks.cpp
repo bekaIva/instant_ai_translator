@@ -2,6 +2,7 @@
 #include "text_selection_monitor.h"
 #include "context_menu_injector.h"
 #include "dbus_service.h"
+#include "text_replacement.h"
 
 #include <gtk/gtk.h>
 #include <glib.h>
@@ -88,6 +89,13 @@ int init_system_hooks() {
         return STATUS_ERROR_INIT;
     }
     
+    // Initialize text replacement system
+    if (init_text_replacement() != STATUS_SUCCESS) {
+        set_last_error("Failed to initialize text replacement system");
+        cleanup_system_hooks();
+        return STATUS_ERROR_INIT;
+    }
+    
     system_initialized = TRUE;
     return STATUS_SUCCESS;
 }
@@ -106,6 +114,9 @@ void cleanup_system_hooks() {
     
     // Cleanup text selection monitor
     cleanup_text_selection_monitor();
+    
+    // Cleanup text replacement system
+    cleanup_text_replacement();
     
     // Stop GTK main loop
     if (main_loop) {

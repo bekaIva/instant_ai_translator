@@ -1,0 +1,1 @@
+Let's test our amazing AI translator system! This text should trigger the context menu when selected.

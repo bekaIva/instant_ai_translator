@@ -4,6 +4,8 @@ import 'context_menu_manager_screen.dart';
 import 'settings_screen.dart';
 import 'activity_monitor_screen.dart';
 import 'system_status_screen.dart';
+import 'phase3_demo_screen.dart';
+import 'phase3_demo_screen_v2.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,6 +20,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = [
     const SystemStatusScreen(),
     const ContextMenuManagerScreen(),
+    const Phase3DemoScreen(),
+    const Phase3DemoScreenV2(),
     const SettingsScreen(),
     const ActivityMonitorScreen(),
   ];

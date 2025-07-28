@@ -19,24 +19,34 @@ class NavigationSidebar extends StatelessWidget {
       backgroundColor: Theme.of(context).colorScheme.surface,
       destinations: const [
         NavigationRailDestination(
-          icon: Icon(Icons.dashboard_outlined),
-          selectedIcon: Icon(Icons.dashboard),
-          label: Text('Status'),
+          icon: Icon(Icons.smart_toy_outlined),
+          selectedIcon: Icon(Icons.smart_toy),
+          label: Text('Main'),
         ),
         NavigationRailDestination(
           icon: Icon(Icons.menu_outlined),
           selectedIcon: Icon(Icons.menu),
-          label: Text('Context Menus'),
+          label: Text('Menu Manager'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.settings_outlined),
-          selectedIcon: Icon(Icons.settings),
-          label: Text('Settings'),
+          icon: Icon(Icons.dashboard_outlined),
+          selectedIcon: Icon(Icons.dashboard),
+          label: Text('System Status'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.science_outlined),
+          selectedIcon: Icon(Icons.science),
+          label: Text('Phase 3 Demo'),
         ),
         NavigationRailDestination(
           icon: Icon(Icons.history_outlined),
           selectedIcon: Icon(Icons.history),
           label: Text('Activity'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.settings_outlined),
+          selectedIcon: Icon(Icons.settings),
+          label: Text('Settings'),
         ),
       ],
     );
