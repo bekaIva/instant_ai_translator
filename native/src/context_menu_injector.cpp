@@ -163,9 +163,44 @@ static gboolean on_window_focus_out(GtkWidget* window, GdkEvent* event, gpointer
     return FALSE;
 }
 
-// Show context menu at specific position
-static void show_menu_at_position(int x, int y, SelectionData* selection) {
-    printf("Creating context menu at position (%d, %d)\n", x, y);
+// Data structure for menu creation in main thread
+typedef struct {
+    int x;
+    int y;
+    SelectionData* selection;
+} MenuCreationData;
+
+// Show notification dialog in main thread
+static gboolean show_notification_in_main_thread(gpointer data) {
+    printf("Showing no-text-selected notification\n");
+    
+    GtkWidget* dialog = gtk_message_dialog_new(NULL,
+        GTK_DIALOG_MODAL,
+        GTK_MESSAGE_INFO,
+        GTK_BUTTONS_OK,
+        "Instant AI Translator\n\nHotkey Ctrl+Shift+M detected!\nPlease select some text first.");
+    
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+    
+    // Return FALSE to remove this idle handler
+    return FALSE;
+}
+
+// Show no-text notification (thread-safe)
+static void show_no_text_notification() {
+    printf("Queuing no-text notification\n");
+    g_idle_add(show_notification_in_main_thread, NULL);
+}
+
+// Create menu in GTK main thread
+static gboolean create_menu_in_main_thread(gpointer data) {
+    MenuCreationData* menu_data = (MenuCreationData*)data;
+    int x = menu_data->x;
+    int y = menu_data->y;
+    SelectionData* selection = menu_data->selection;
+    
+    printf("Creating context menu at position (%d, %d) in main thread\n", x, y);
     
     // Store current selection
     current_selection = selection;
@@ -175,7 +210,6 @@ static void show_menu_at_position(int x, int y, SelectionData* selection) {
     gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_MENU);
     gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
     gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
-    
     // Create menu container
     GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_container_add(GTK_CONTAINER(window), vbox);
@@ -254,6 +288,26 @@ static void show_menu_at_position(int x, int y, SelectionData* selection) {
     g_signal_connect(window, "focus-out-event", G_CALLBACK(on_window_focus_out), NULL);
     
     printf("Context menu window created and shown\n");
+    
+    // Cleanup menu creation data
+    free(menu_data);
+    
+    // Return FALSE to remove this idle handler
+    return FALSE;
+}
+
+// Show context menu at specific position (thread-safe)
+static void show_menu_at_position(int x, int y, SelectionData* selection) {
+    printf("Queuing context menu creation for position (%d, %d)\n", x, y);
+    
+    // Create data for menu creation in main thread
+    MenuCreationData* menu_data = (MenuCreationData*)malloc(sizeof(MenuCreationData));
+    menu_data->x = x;
+    menu_data->y = y;
+    menu_data->selection = selection;
+    
+    // Schedule menu creation in GTK main thread
+    g_idle_add(create_menu_in_main_thread, menu_data);
 }
 
 // Hotkey monitoring thread (Ctrl+Shift+M)
@@ -315,15 +369,8 @@ static gpointer hotkey_monitor_thread(gpointer data) {
                     } else {
                         printf("⚠️  No text selected - showing simple notification\n");
                         
-                        // Show a simple notification that hotkey works
-                        GtkWidget* dialog = gtk_message_dialog_new(NULL,
-                            GTK_DIALOG_MODAL,
-                            GTK_MESSAGE_INFO,
-                            GTK_BUTTONS_OK,
-                            "Instant AI Translator\n\nHotkey Ctrl+Shift+M detected!\nPlease select some text first.");
-                        
-                        gtk_dialog_run(GTK_DIALOG(dialog));
-                        gtk_widget_destroy(dialog);
+                        // Show a simple notification that hotkey works (thread-safe)
+                        show_no_text_notification();
                     }
                 }
             }
