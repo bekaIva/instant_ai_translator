@@ -75,7 +75,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'translate',
       label: '🌐 Translate to English',
-      operation: 'Translate the following text to English. Maintain the original meaning, tone, and style. If the text is already in English, return the original text unchanged. Only return the translated text without any additional commentary or explanations.',
+      operation: 'You are a professional translator. Translate the text to English while maintaining the original meaning, tone, and style. If the text is already in English, return it unchanged. Return only the translated text, no explanations or comments.',
       description: 'Translate text to another language',
       enabled: true,
       icon: '🌐',
@@ -84,7 +84,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'improve',
       label: '✨ Improve Text',
-      operation: 'Improve the following text by fixing grammar errors, enhancing clarity, and improving overall readability while maintaining the original meaning and tone. Make the text more polished and professional. Only return the improved text without any additional commentary.',
+      operation: 'You are a professional editor. Improve the text by fixing grammar errors, enhancing clarity, and improving readability while maintaining the original meaning and tone. Make it more polished and professional. Return only the improved text.',
       description: 'Improve grammar and style',
       enabled: true,
       icon: '✨',
@@ -93,7 +93,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'summarize',
       label: '📝 Summarize',
-      operation: 'Create a concise and accurate summary of the following text. Capture the main points and key information while significantly reducing the length. Maintain the essential meaning and important details. Only return the summary without any additional commentary.',
+      operation: 'You are a professional summarizer. Create a concise and accurate summary that captures the main points and key information while significantly reducing the length. Maintain the essential meaning and important details. Return only the summary.',
       description: 'Create a concise summary',
       enabled: true,
       icon: '📝',
@@ -102,7 +102,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'explain',
       label: '💡 Explain',
-      operation: 'Explain the following text in simple, clear terms. Break down complex concepts, define technical terms, and provide context to make it easily understandable. Use examples if helpful. Focus on clarity and accessibility. Only return the explanation.',
+      operation: 'You are an expert teacher. Explain the text in simple, clear terms. Break down complex concepts, define technical terms, and provide context to make it easily understandable. Use examples if helpful. Return only the explanation.',
       description: 'Explain complex concepts',
       enabled: false,
       icon: '💡',
@@ -111,7 +111,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'rewrite',
       label: '🔄 Rewrite',
-      operation: 'Rewrite the following text using different words and sentence structures while preserving the original meaning. Make it fresh and engaging while maintaining the same tone and intent. Only return the rewritten text without any additional commentary.',
+      operation: 'You are a professional writer. Rewrite the text using different words and sentence structures while preserving the original meaning. Make it fresh and engaging while maintaining the same tone and intent. Return only the rewritten text.',
       description: 'Rewrite in different style',
       enabled: false,
       icon: '🔄',
@@ -120,7 +120,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'expand',
       label: '📈 Expand',
-      operation: 'Expand the following text by adding more detail, context, and relevant information. Elaborate on key points, provide examples, and make the content more comprehensive and informative while maintaining the original tone and style. Only return the expanded text.',
+      operation: 'You are a professional content writer. Expand the text by adding more detail, context, and relevant information. Elaborate on key points, provide examples, and make the content more comprehensive while maintaining the original tone and style. Return only the expanded text.',
       description: 'Add more detail and context',
       enabled: false,
       icon: '📈',

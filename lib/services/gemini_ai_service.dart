@@ -8,22 +8,30 @@ class GeminiAIService {
   /// Process text using Gemini AI with the given system instruction
   static Future<String> processText(String text, String systemInstruction) async {
     try {
-      // Prepare the request payload
+      // Prepare the request payload with proper system instruction
       final requestBody = {
+        'systemInstruction': {
+          'parts': [
+            {
+              'text': systemInstruction
+            }
+          ]
+        },
         'contents': [
           {
             'parts': [
               {
-                'text': '$systemInstruction\n\nText to process:\n$text'
+                'text': text
               }
             ]
           }
         ],
         'generationConfig': {
-          'temperature': 0.1, // Low temperature for more consistent results
-          'topK': 1,
+          'temperature': 0.2, // Low temperature for more consistent, focused results
+          'topK': 40,
           'topP': 0.8,
           'maxOutputTokens': 2048,
+          'stopSequences': [], // No special stop sequences needed
         },
         'safetySettings': [
           {
