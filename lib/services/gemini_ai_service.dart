@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'ai_settings_service.dart';
 
 class GeminiAIService {
-  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
+  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
 
   /// Process text using Gemini AI with the given system instruction
   static Future<String> processText(String text, String systemInstruction) async {
