@@ -57,13 +57,26 @@ echo "🔨 Building native library..."
 make -j$(nproc)
 
 # Check if library was built successfully
-if [ -f "libinstant_translator_native.so" ]; then
-    echo "✅ Library built successfully: libinstant_translator_native.so"
+if [ -f "libinstant_translator_native.so.1.0" ]; then
+    echo "✅ Library built successfully: libinstant_translator_native.so.1.0"
     
     # Copy to lib directory for Flutter
     echo "📋 Copying library to Flutter lib directory..."
     mkdir -p "../../lib/native/libs"
-    cp "libinstant_translator_native.so" "../../lib/native/libs/"
+    
+    # Copy the main library file
+    cp "libinstant_translator_native.so.1.0" "../../lib/native/libs/"
+    
+    # Store current directory
+    BUILD_DIR=$(pwd)
+    
+    # Create symlinks for version management
+    cd "../../lib/native/libs"
+    ln -sf "libinstant_translator_native.so.1.0" "libinstant_translator_native.so.1"
+    ln -sf "libinstant_translator_native.so.1.0" "libinstant_translator_native.so"
+    
+    # Return to build directory
+    cd "$BUILD_DIR"
     
     echo "🎯 Testing library..."
     if [ -f "instant_translator_test" ]; then
@@ -79,7 +92,7 @@ if [ -f "libinstant_translator_native.so" ]; then
     echo "🚀 Next steps:"
     echo "   1. Test the native library: ./native/build/instant_translator_test"
     echo "   2. Run Flutter app to test integration"
-    echo "   3. Select text and press Ctrl+Alt+T to trigger context menu"
+    echo "   3. Select text and press Ctrl+Shift+M to trigger context menu"
     
 else
     echo "❌ Build failed - library not found"
