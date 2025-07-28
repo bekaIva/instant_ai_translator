@@ -65,6 +65,9 @@ class ProductionContextMenuService {
   List<String> get logs => List.unmodifiable(_logs);
   List<ContextMenuAction> get actions => List.unmodifiable(_actions);
 
+  bool _processing = false;
+  String?
+  _lastProcessedAction; // Track last processed action to prevent duplicates
   bool _initialized = false;
   bool _monitoring = false;
   List<ContextMenuConfig> _activeConfigs = [];
@@ -162,6 +165,8 @@ class ProductionContextMenuService {
 
   // Check for menu actions written to file by native code
   Future<void> _checkForMenuActions() async {
+    if (_processing) return; // Prevent multiple concurrent processing
+
     try {
       final actionFile = File('/tmp/instant_translator_action.txt');
       if (await actionFile.exists()) {
@@ -171,18 +176,37 @@ class ProductionContextMenuService {
         if (parts.length == 2) {
           final menuId = parts[0];
           final selectedText = parts[1];
+          final actionKey = '$menuId:$selectedText';
+
+          // Check if this is a duplicate action
+          if (_lastProcessedAction == actionKey) {
+            await actionFile.delete(); // Clean up duplicate
+            return;
+          }
+
+          _processing = true; // Mark as processing
+          _lastProcessedAction = actionKey; // Remember this action
 
           _addLog('📨 Received menu action from native: $menuId');
 
+          // Clean up the action file FIRST to prevent reprocessing
+          await actionFile.delete();
+
           // Process the action
           await handleMenuAction(menuId, selectedText);
-
-          // Clean up the action file
+        } else {
+          // Invalid format, clean up file
           await actionFile.delete();
         }
       }
     } catch (e) {
       // Silently handle errors to avoid spam
+    } finally {
+      _processing = false; // Always reset processing flag
+      // Clear last action after a delay to allow new actions
+      Future.delayed(Duration(seconds: 2), () {
+        _lastProcessedAction = null;
+      });
     }
   }
 
@@ -243,7 +267,7 @@ class ProductionContextMenuService {
     _addLog('🤖 Processing text with operation: $operation');
 
     // Simulate processing delay
-    await Future.delayed(Duration(milliseconds: 200));
+    await Future.delayed(Duration(milliseconds: 3000));
 
     switch (operation) {
       case 'translate':

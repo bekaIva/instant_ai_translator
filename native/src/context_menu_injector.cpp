@@ -125,10 +125,10 @@ static void on_menu_button_clicked(GtkWidget* button, gpointer data) {
             printf("Calling menu action callback for: %s\n", menu_id);
             menu_action_callback(menu_id, current_selection);
         } else {
-            // Fallback: do basic text processing and replacement directly
-            printf("No callback registered, doing direct text replacement\n");
+            // Fallback: write action to file for Flutter processing (no native replacement)
+            printf("No callback registered, delegating to Flutter via file\n");
             
-            // Also write action to file for Flutter to pick up
+            // Write action to file for Flutter to pick up and process
             FILE* action_file = fopen("/tmp/instant_translator_action.txt", "w");
             if (action_file) {
                 fprintf(action_file, "%s|%s\n", menu_id, current_selection->text);
@@ -136,34 +136,7 @@ static void on_menu_button_clicked(GtkWidget* button, gpointer data) {
                 printf("Action written to file for Flutter pickup\n");
             }
             
-            // Simple AI simulation
-            char processed_text[1024];
-            if (strcmp(menu_id, "translate") == 0) {
-                // Simple translation simulation
-                snprintf(processed_text, sizeof(processed_text), "[TRANSLATED] %s", current_selection->text);
-            } else if (strcmp(menu_id, "improve") == 0) {
-                snprintf(processed_text, sizeof(processed_text), "[IMPROVED] %s", current_selection->text);
-            } else if (strcmp(menu_id, "summarize") == 0) {
-                snprintf(processed_text, sizeof(processed_text), "[SUMMARY] %s", current_selection->text);
-            } else if (strcmp(menu_id, "explain") == 0) {
-                snprintf(processed_text, sizeof(processed_text), "[EXPLAINED] %s", current_selection->text);
-            } else if (strcmp(menu_id, "rewrite") == 0) {
-                snprintf(processed_text, sizeof(processed_text), "[REWRITTEN] %s", current_selection->text);
-            } else if (strcmp(menu_id, "expand") == 0) {
-                snprintf(processed_text, sizeof(processed_text), "[EXPANDED] %s", current_selection->text);
-            } else {
-                snprintf(processed_text, sizeof(processed_text), "[PROCESSED] %s", current_selection->text);
-            }
-            
-            printf("Replacing text with: %s\n", processed_text);
-            
-            // Do the actual text replacement
-            int result = replace_text_via_clipboard(processed_text);
-            if (result == STATUS_SUCCESS) {
-                printf("✅ Text replacement successful!\n");
-            } else {
-                printf("❌ Text replacement failed with code: %d\n", result);
-            }
+            // Don't do native replacement - let Flutter handle everything
         }
     }
     
