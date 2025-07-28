@@ -131,7 +131,7 @@ static void on_menu_button_clicked(GtkWidget* button, gpointer data) {
             // Write action to file for Flutter to pick up and process
             FILE* action_file = fopen("/tmp/instant_translator_action.txt", "w");
             if (action_file) {
-                fprintf(action_file, "%s|%s\n", menu_id, current_selection->text);
+                fprintf(action_file, "%s\t\n%s\n", menu_id, current_selection->text);
                 fclose(action_file);
                 printf("Action written to file for Flutter pickup\n");
             }

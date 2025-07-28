@@ -171,7 +171,7 @@ class ProductionContextMenuService {
       final actionFile = File('/tmp/instant_translator_action.txt');
       if (await actionFile.exists()) {
         final content = await actionFile.readAsString();
-        final parts = content.trim().split('|');
+        final parts = content.trim().split('\t\n');
 
         if (parts.length == 2) {
           final menuId = parts[0];

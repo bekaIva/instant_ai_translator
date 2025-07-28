@@ -71,7 +71,7 @@ When you click the Test Action button:
 
 ### File-Based Communication
 - **Action File**: `/tmp/instant_translator_action.txt`
-- **Format**: `menuId|selectedText`
+- **Format**: `menuId\t\nselectedText` (tab+newline separator to handle pipe symbols)
 - **Monitoring**: Real-time file polling for menu actions
 
 ### Persistent Storage
