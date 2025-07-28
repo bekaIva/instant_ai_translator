@@ -158,11 +158,7 @@ int replace_selected_text_advanced(const char* new_text) {
         return STATUS_ERROR_INIT;
     }
     
-    // Method 1: Try Ctrl+A, then type (select all in current context)
-    send_key_combo(ControlMask, XK_a);
-    usleep(50000); // 50ms delay
-    
-    // Type the new text
+    // Just type the new text directly - it will replace the selection
     type_text(new_text);
     
     return STATUS_SUCCESS;
@@ -197,9 +193,8 @@ int replace_text_via_clipboard(const char* new_text) {
     fwrite(new_text, 1, strlen(new_text), clip_pipe);
     pclose(clip_pipe);
     
-    // Select current text and paste
-    send_key_combo(ControlMask, XK_a);  // Select all
-    usleep(50000); // 50ms delay
+    // Just paste over the current selection (don't select all!)
+    // The selected text will be automatically replaced by the paste
     send_key_combo(ControlMask, XK_v);  // Paste
     
     // Give some time for the paste to complete

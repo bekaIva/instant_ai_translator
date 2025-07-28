@@ -106,6 +106,22 @@ foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})
     COMPONENT Runtime)
 endforeach(bundled_library)
 
+# Install our custom native library
+set(NATIVE_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../lib/native/libs")
+set(NATIVE_LIB_VERSIONED "${NATIVE_LIB_DIR}/libinstant_translator_native.so.1.0")
+
+if(EXISTS "${NATIVE_LIB_VERSIONED}")
+  # Install the library with the standard name (no version, no symlinks)
+  install(FILES "${NATIVE_LIB_VERSIONED}"
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    RENAME "libinstant_translator_native.so"
+    COMPONENT Runtime)
+    
+  message(STATUS "Will install native library: ${NATIVE_LIB_VERSIONED} -> libinstant_translator_native.so")
+else()
+  message(WARNING "Native library not found at: ${NATIVE_LIB_VERSIONED}")
+endif()
+
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/linux/")
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"

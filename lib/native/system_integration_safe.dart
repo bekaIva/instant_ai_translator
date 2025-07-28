@@ -7,9 +7,11 @@ final DynamicLibrary _nativeLib = () {
   if (Platform.isLinux) {
     // Try multiple paths for the native library
     final possiblePaths = [
-      'lib/native/libs/libinstant_translator_native.so',
-      './lib/native/libs/libinstant_translator_native.so',
-      'libinstant_translator_native.so',
+      'lib/native/libs/libinstant_translator_native.so',  // Development mode
+      './lib/native/libs/libinstant_translator_native.so', // Development mode with relative path
+      'lib/libinstant_translator_native.so',              // Release bundle mode
+      './lib/libinstant_translator_native.so',            // Release bundle with relative path
+      'libinstant_translator_native.so',                  // System library path
     ];
     
     for (final path in possiblePaths) {
@@ -224,7 +226,7 @@ class SystemIntegration {
   bool _initialized = false;
 
   // Initialize the system integration
-  Future<bool> initialize() async {
+  Future<bool> initialize({bool enableCallbacks = false}) async {
     if (_initialized) return true;
 
     // Check system compatibility first
@@ -232,20 +234,30 @@ class SystemIntegration {
       return false;
     }
 
-    // NOTE: Commenting out native callbacks due to isolate issues
-    // We'll implement polling-based approach instead
-    // _selectionCallbackPtr = Pointer.fromFunction<SelectionCallbackNative>(_onSelectionChangedNative);
-    // _menuActionCallbackPtr = Pointer.fromFunction<MenuActionCallbackNative>(_onMenuActionNative);
-
     // Initialize native system
     int result = _initSystemHooks();
     if (result != StatusCode.success) {
       return false;
     }
 
-    // Set callbacks - commenting out for now
-    // _setSelectionCallback(_selectionCallbackPtr);
-    // _setMenuActionCallback(_menuActionCallbackPtr);
+    // Only set up callbacks if explicitly requested and safe
+    if (enableCallbacks) {
+      try {
+        // Set up native callbacks
+        _selectionCallbackPtr = Pointer.fromFunction<SelectionCallbackNative>(_onSelectionChangedNative);
+        _menuActionCallbackPtr = Pointer.fromFunction<MenuActionCallbackNative>(_onMenuActionNative);
+
+        // Set callbacks
+        _setSelectionCallback(_selectionCallbackPtr);
+        _setMenuActionCallback(_menuActionCallbackPtr);
+        print('✅ Callbacks enabled');
+      } catch (e) {
+        print('⚠️  Callback setup failed: $e');
+        print('   Continuing without callbacks');
+      }
+    } else {
+      print('📋 Running without callbacks to avoid isolate issues');
+    }
 
     _initialized = true;
     return true;
