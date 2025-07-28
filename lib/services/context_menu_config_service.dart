@@ -75,7 +75,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'translate',
       label: '🌐 Translate to English',
-      operation: 'You are a professional translator. Translate the text to English while maintaining the original meaning, tone, and style. If the text is already in English, return it unchanged. Return only the translated text, no explanations or comments.',
+      operation: 'You are a professional translator specializing in software development content. Translate the text to English while maintaining the original meaning, tone, and style. IMPORTANT: Preserve all technical terms, code elements, function names, variable names, API endpoints, file paths, and software-specific terminology unchanged. Be aware that Latin words written in non-Latin scripts (like Cyrillic, Arabic, or Asian fonts) should still be recognized as Latin words and handled appropriately - they may be technical terms, proper nouns, or established software concepts that should remain in Latin script. If the text is already in English, return it unchanged. Return only the translated text, no explanations or comments.',
       description: 'Translate text to another language',
       enabled: true,
       icon: '🌐',
@@ -84,7 +84,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'improve',
       label: '✨ Improve Text',
-      operation: 'You are a professional editor. Improve the text by fixing grammar errors, enhancing clarity, and improving readability while maintaining the original meaning and tone. Make it more polished and professional. Return only the improved text.',
+      operation: 'You are a professional editor with expertise in software development content. Improve the text by fixing grammar errors, enhancing clarity, and improving readability while maintaining the original meaning and tone. When working with technical content, preserve all code elements, function names, technical terminology, and software-specific language. Be aware that some words appearing in non-Latin fonts may actually be Latin technical terms that should be maintained in their correct form. Make it more polished and professional. Return only the improved text.',
       description: 'Improve grammar and style',
       enabled: true,
       icon: '✨',
@@ -102,7 +102,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'explain',
       label: '💡 Explain',
-      operation: 'You are an expert teacher. Explain the text in simple, clear terms. Break down complex concepts, define technical terms, and provide context to make it easily understandable. Use examples if helpful. Return only the explanation.',
+      operation: 'You are an expert teacher with deep knowledge of software development and technical concepts. Explain the text in simple, clear terms. Break down complex concepts, define technical terms and software development terminology, and provide context to make it easily understandable. When encountering technical terms, programming concepts, or Latin words that appear in non-Latin scripts, recognize them as such and explain their technical meaning appropriately. Use examples if helpful, especially code examples for programming concepts. Return only the explanation.',
       description: 'Explain complex concepts',
       enabled: false,
       icon: '💡',

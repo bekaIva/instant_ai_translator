@@ -70,7 +70,7 @@ void main() {
       final apiInfo = GeminiAIService.getApiInfo();
       
       expect(apiInfo['service'], 'Google Gemini AI');
-      expect(apiInfo['model'], 'gemini-1.5-flash-latest');
+      expect(apiInfo['model'], 'gemini-2.5-flash');
       expect(apiInfo['apiKeyConfigured'], true);
       expect(apiInfo['baseUrl'], contains('generativelanguage.googleapis.com'));
     });

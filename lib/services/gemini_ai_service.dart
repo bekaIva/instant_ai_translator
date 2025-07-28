@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class GeminiAIService {
-  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
   static const String _apiKey = 'AIzaSyBsN3KkjjNqDWNvuR6mFUUSZsfQbOclGx0';
 
   /// Process text using Gemini AI with the given system instruction
@@ -10,18 +10,11 @@ class GeminiAIService {
     try {
       // Prepare the request payload with proper system instruction
       final requestBody = {
-        'systemInstruction': {
-          'parts': [
-            {
-              'text': systemInstruction
-            }
-          ]
-        },
         'contents': [
           {
             'parts': [
               {
-                'text': text
+                'text': '$systemInstruction\n\nUser input: $text\n\nResponse:'
               }
             ]
           }
@@ -107,7 +100,7 @@ class GeminiAIService {
   static Map<String, dynamic> getApiInfo() {
     return {
       'service': 'Google Gemini AI',
-      'model': 'gemini-1.5-flash-latest',
+      'model': 'gemini-2.5-flash',
       'apiKeyConfigured': _apiKey.isNotEmpty,
       'baseUrl': _baseUrl,
     };

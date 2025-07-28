@@ -343,20 +343,24 @@ class _ContextMenuManagerScreenV2State extends State<ContextMenuManagerScreenV2>
                                     const SizedBox(height: 4),
                                     Row(
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue.shade100,
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            config.operation,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.blue.shade700,
+                                        Flexible(
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.blue.shade100,
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              config.operation,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.blue.shade700,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                         ),
@@ -563,13 +567,15 @@ class _ConfigEditDialogState extends State<_ConfigEditDialog> {
               TextFormField(
                 controller: _operationController,
                 decoration: const InputDecoration(
-                  labelText: 'Operation',
-                  hintText: 'translate',
+                  labelText: 'AI System Instruction',
+                  hintText: 'You are a professional translator. Translate the text...',
                   border: OutlineInputBorder(),
+                  helperText: 'This instruction will be sent to the AI along with the user\'s selected text',
                 ),
+                maxLines: 4,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Operation is required';
+                    return 'AI instruction is required';
                   }
                   return null;
                 },
