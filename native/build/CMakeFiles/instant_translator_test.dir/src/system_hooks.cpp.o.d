@@ -5,6 +5,7 @@ CMakeFiles/instant_translator_test.dir/src/system_hooks.cpp.o: \
  /home/beka/Documents/GitHub/instant_ai_translator/native/src/text_selection_monitor.h \
  /home/beka/Documents/GitHub/instant_ai_translator/native/src/context_menu_injector.h \
  /home/beka/Documents/GitHub/instant_ai_translator/native/src/dbus_service.h \
+ /home/beka/Documents/GitHub/instant_ai_translator/native/src/text_replacement.h \
  /usr/include/gtk-3.0/gtk/gtk.h /usr/include/gtk-3.0/gdk/gdk.h \
  /usr/include/gtk-3.0/gdk/gdkconfig.h /usr/include/glib-2.0/glib.h \
  /usr/include/glib-2.0/glib/galloca.h /usr/include/glib-2.0/glib/gtypes.h \

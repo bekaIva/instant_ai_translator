@@ -4,6 +4,7 @@
 CMakeFiles/instant_translator_native.dir/src/context_menu_injector.cpp.o: /home/beka/Documents/GitHub/instant_ai_translator/native/src/context_menu_injector.cpp \
   /home/beka/Documents/GitHub/instant_ai_translator/native/include/instant_translator.h \
   /home/beka/Documents/GitHub/instant_ai_translator/native/src/context_menu_injector.h \
+  /home/beka/Documents/GitHub/instant_ai_translator/native/src/text_replacement.h \
   /home/beka/Documents/GitHub/instant_ai_translator/native/src/text_selection_monitor.h \
   /usr/include/X11/X.h \
   /usr/include/X11/Xfuncproto.h \
@@ -1907,6 +1908,7 @@ CMakeFiles/instant_translator_native.dir/src/system_hooks.cpp.o: /home/beka/Docu
   /home/beka/Documents/GitHub/instant_ai_translator/native/include/instant_translator.h \
   /home/beka/Documents/GitHub/instant_ai_translator/native/src/context_menu_injector.h \
   /home/beka/Documents/GitHub/instant_ai_translator/native/src/dbus_service.h \
+  /home/beka/Documents/GitHub/instant_ai_translator/native/src/text_replacement.h \
   /home/beka/Documents/GitHub/instant_ai_translator/native/src/text_selection_monitor.h \
   /usr/include/alloca.h \
   /usr/include/asm-generic/errno-base.h \
@@ -4390,8 +4392,6 @@ CMakeFiles/instant_translator_native.dir/src/text_selection_monitor.cpp.o: /home
 
 /home/beka/Documents/GitHub/instant_ai_translator/native/src/text_replacement.cpp:
 
-/home/beka/Documents/GitHub/instant_ai_translator/native/src/text_replacement.h:
-
 /home/beka/Documents/GitHub/instant_ai_translator/native/src/main.cpp:
 
 /usr/lib/x86_64-linux-gnu/dbus-1.0/include/dbus/dbus-arch-deps.h:
@@ -4766,6 +4766,8 @@ CMakeFiles/instant_translator_native.dir/src/text_selection_monitor.cpp.o: /home
 
 /usr/include/gtk-3.0/gtk/gtkmodelbutton.h:
 
+/usr/include/gtk-3.0/gtk/gtkmessagedialog.h:
+
 /usr/include/glib-2.0/glib/gdate.h:
 
 /usr/include/glib-2.0/gio/gdatainputstream.h:
@@ -5040,16 +5042,6 @@ CMakeFiles/instant_translator_native.dir/src/text_selection_monitor.cpp.o: /home
 
 /usr/include/atk-1.0/atk/atkvalue.h:
 
-/usr/include/glib-2.0/gio/gliststore.h:
-
-/usr/include/X11/keysymdef.h:
-
-/usr/include/gtk-3.0/gdk/x11/gdkx11selection.h:
-
-/usr/include/gtk-3.0/gtk/gtksizegroup.h:
-
-/usr/include/gdk-pixbuf-2.0/gdk-pixbuf/gdk-pixbuf-macros.h:
-
 /usr/include/features.h:
 
 /usr/include/glib-2.0/gio/gpollableoutputstream.h:
@@ -5085,10 +5077,6 @@ CMakeFiles/instant_translator_native.dir/src/text_selection_monitor.cpp.o: /home
 /usr/include/glib-2.0/gio/gdbusactiongroup.h:
 
 /usr/include/glib-2.0/gio/giostream.h:
-
-/usr/include/glib-2.0/glib/gdir.h:
-
-/usr/include/glib-2.0/gio/gfilemonitor.h:
 
 /usr/include/glib-2.0/glib/gregex.h:
 
@@ -5146,6 +5134,48 @@ CMakeFiles/instant_translator_native.dir/src/text_selection_monitor.cpp.o: /home
 
 /usr/include/glib-2.0/glib/gkeyfile.h:
 
+/usr/include/gtk-3.0/gtk/gtkmenutoolbutton.h:
+
+/usr/include/atk-1.0/atk/atkselection.h:
+
+/usr/include/pango-1.0/pango/pango-types.h:
+
+/usr/include/gtk-3.0/gtk/gtkmountoperation.h:
+
+/usr/include/glib-2.0/gio/gactionmap.h:
+
+/usr/include/stdint.h:
+
+/usr/include/gtk-3.0/gtk/gtkborder.h:
+
+/usr/include/glib-2.0/glib/gdatetime.h:
+
+/usr/include/gtk-3.0/gdk/gdkcairo.h:
+
+/usr/include/glib-2.0/glib/deprecated/gmain.h:
+
+/usr/include/glib-2.0/gio/gunixfdlist.h:
+
+/usr/include/glib-2.0/glib/gbase64.h:
+
+/usr/include/glib-2.0/glib/gvarianttype.h:
+
+/usr/include/gtk-3.0/gdk/gdk.h:
+
+/usr/include/glib-2.0/gio/gdbusmethodinvocation.h:
+
+/usr/include/glib-2.0/glib/garray.h:
+
+/usr/include/glib-2.0/gio/gunixcredentialsmessage.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h:
+
+/usr/include/glib-2.0/gio/gdbusobjectmanagerserver.h:
+
+/usr/include/glib-2.0/gio/gdbusobject.h:
+
+/usr/include/gtk-3.0/gtk/deprecated/gtkgradient.h:
+
 /usr/include/cairo/cairo-deprecated.h:
 
 /usr/include/glib-2.0/glib/deprecated/gcompletion.h:
@@ -5194,10 +5224,6 @@ CMakeFiles/instant_translator_native.dir/src/text_selection_monitor.cpp.o: /home
 
 /usr/include/X11/Xlib.h:
 
-/home/beka/Documents/GitHub/instant_ai_translator/native/src/text_selection_monitor.h:
-
-/usr/include/glib-2.0/gio/gdbusaddress.h:
-
 /home/beka/Documents/GitHub/instant_ai_translator/native/src/context_menu_injector.h:
 
 /usr/include/gtk-3.0/gtk/gtkappchooser.h:
@@ -5218,47 +5244,27 @@ CMakeFiles/instant_translator_native.dir/src/text_selection_monitor.cpp.o: /home
 
 /usr/include/atk-1.0/atk/atkdocument.h:
 
-/usr/include/gtk-3.0/gtk/gtkmenutoolbutton.h:
+/usr/include/glib-2.0/gio/gliststore.h:
 
-/usr/include/atk-1.0/atk/atkselection.h:
+/usr/include/X11/keysymdef.h:
 
-/usr/include/pango-1.0/pango/pango-types.h:
+/usr/include/gtk-3.0/gdk/x11/gdkx11selection.h:
 
-/usr/include/gtk-3.0/gtk/gtkmountoperation.h:
+/usr/include/gtk-3.0/gtk/gtksizegroup.h:
 
-/usr/include/glib-2.0/gio/gactionmap.h:
+/usr/include/gdk-pixbuf-2.0/gdk-pixbuf/gdk-pixbuf-macros.h:
 
-/usr/include/stdint.h:
+/usr/include/glib-2.0/gio/gdbusaddress.h:
 
-/usr/include/gtk-3.0/gtk/gtkborder.h:
+/home/beka/Documents/GitHub/instant_ai_translator/native/src/text_selection_monitor.h:
 
-/usr/include/glib-2.0/glib/gdatetime.h:
+/usr/include/glib-2.0/gio/gdtlsserverconnection.h:
 
-/usr/include/gtk-3.0/gdk/gdkcairo.h:
+/usr/include/glib-2.0/gio/gdbusconnection.h:
 
-/usr/include/glib-2.0/glib/deprecated/gmain.h:
+/home/beka/Documents/GitHub/instant_ai_translator/native/src/text_replacement.h:
 
-/usr/include/glib-2.0/gio/gunixfdlist.h:
-
-/usr/include/glib-2.0/glib/gbase64.h:
-
-/usr/include/glib-2.0/glib/gvarianttype.h:
-
-/usr/include/gtk-3.0/gdk/gdk.h:
-
-/usr/include/glib-2.0/gio/gdbusmethodinvocation.h:
-
-/usr/include/glib-2.0/glib/garray.h:
-
-/usr/include/glib-2.0/gio/gunixcredentialsmessage.h:
-
-/usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h:
-
-/usr/include/glib-2.0/gio/gdbusobjectmanagerserver.h:
-
-/usr/include/glib-2.0/gio/gdbusobject.h:
-
-/usr/include/gtk-3.0/gtk/deprecated/gtkgradient.h:
+/usr/include/glib-2.0/gio/gnativesocketaddress.h:
 
 /usr/include/gtk-3.0/gtk/gtktypes.h:
 
@@ -5276,8 +5282,6 @@ CMakeFiles/instant_translator_native.dir/src/text_selection_monitor.cpp.o: /home
 
 /usr/include/X11/extensions/XTest.h:
 
-/usr/include/atk-1.0/atk/atkrelationtype.h:
-
 /usr/include/atk-1.0/atk/atk-enum-types.h:
 
 /usr/include/glib-2.0/gio/gsrvtarget.h:
@@ -5289,6 +5293,8 @@ CMakeFiles/instant_translator_native.dir/src/text_selection_monitor.cpp.o: /home
 /usr/include/pango-1.0/pango/pango-renderer.h:
 
 /home/beka/Documents/GitHub/instant_ai_translator/native/src/context_menu_injector.cpp:
+
+/usr/include/atk-1.0/atk/atkrelationtype.h:
 
 /usr/include/asm-generic/errno-base.h:
 
@@ -5385,10 +5391,6 @@ CMakeFiles/instant_translator_native.dir/src/text_selection_monitor.cpp.o: /home
 /usr/include/gtk-3.0/gtk/gtkfilefilter.h:
 
 /usr/include/gtk-3.0/gtk/gtkcolorchooser.h:
-
-/usr/include/glib-2.0/gio/gdbusconnection.h:
-
-/usr/include/glib-2.0/gio/gdtlsserverconnection.h:
 
 /usr/include/glib-2.0/gio/gsocketaddressenumerator.h:
 
@@ -5490,8 +5492,6 @@ CMakeFiles/instant_translator_native.dir/src/text_selection_monitor.cpp.o: /home
 
 /usr/include/glib-2.0/gio/gdbusauthobserver.h:
 
-/usr/include/glib-2.0/gio/gnativesocketaddress.h:
-
 /usr/include/glib-2.0/glib/gconvert.h:
 
 /usr/include/atk-1.0/atk/atkplug.h:
@@ -5543,6 +5543,10 @@ CMakeFiles/instant_translator_native.dir/src/text_selection_monitor.cpp.o: /home
 /usr/include/glib-2.0/gio/gdrive.h:
 
 /usr/include/gtk-3.0/gtk/gtkfontchooserdialog.h:
+
+/usr/include/glib-2.0/gio/gfilemonitor.h:
+
+/usr/include/glib-2.0/glib/gdir.h:
 
 /usr/include/glib-2.0/glib/genviron.h:
 
@@ -6107,5 +6111,3 @@ CMakeFiles/instant_translator_native.dir/src/text_selection_monitor.cpp.o: /home
 /usr/include/gtk-3.0/gtk/gtkmenubar.h:
 
 /usr/include/gtk-3.0/gtk/gtkmenuitem.h:
-
-/usr/include/gtk-3.0/gtk/gtkmessagedialog.h:

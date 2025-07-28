@@ -5,6 +5,7 @@ CMakeFiles/instant_translator_native.dir/src/context_menu_injector.cpp.o
  /home/beka/Documents/GitHub/instant_ai_translator/native/src/context_menu_injector.cpp
  /home/beka/Documents/GitHub/instant_ai_translator/native/include/instant_translator.h
  /home/beka/Documents/GitHub/instant_ai_translator/native/src/context_menu_injector.h
+ /home/beka/Documents/GitHub/instant_ai_translator/native/src/text_replacement.h
  /home/beka/Documents/GitHub/instant_ai_translator/native/src/text_selection_monitor.h
  /usr/include/X11/X.h
  /usr/include/X11/Xfuncproto.h
@@ -1911,6 +1912,7 @@ CMakeFiles/instant_translator_native.dir/src/system_hooks.cpp.o
  /home/beka/Documents/GitHub/instant_ai_translator/native/include/instant_translator.h
  /home/beka/Documents/GitHub/instant_ai_translator/native/src/context_menu_injector.h
  /home/beka/Documents/GitHub/instant_ai_translator/native/src/dbus_service.h
+ /home/beka/Documents/GitHub/instant_ai_translator/native/src/text_replacement.h
  /home/beka/Documents/GitHub/instant_ai_translator/native/src/text_selection_monitor.h
  /usr/include/alloca.h
  /usr/include/asm-generic/errno-base.h
