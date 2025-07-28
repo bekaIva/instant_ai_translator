@@ -390,7 +390,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value: _availableGeminiModels.any((m) => AISettingsService.getSimpleModelName(m.name) == _model) ? _model : null,
                   hint: const Text('Select a model'),
                   isExpanded: true,
-                  menuMaxHeight: 200, // Limit dropdown height
                   items: _availableGeminiModels.map((model) {
                     final simpleName = AISettingsService.getSimpleModelName(model.name);
                     final displayName = model.displayName.isNotEmpty ? model.displayName : simpleName;
