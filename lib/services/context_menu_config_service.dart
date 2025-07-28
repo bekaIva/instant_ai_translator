@@ -74,8 +74,8 @@ class ContextMenuConfigService {
   static final List<ContextMenuConfig> _defaultConfigs = [
     ContextMenuConfig(
       id: 'translate',
-      label: '🌐 Translate',
-      operation: 'translate',
+      label: '🌐 Translate to English',
+      operation: 'Translate the following text to English. Maintain the original meaning, tone, and style. If the text is already in English, return the original text unchanged. Only return the translated text without any additional commentary or explanations.',
       description: 'Translate text to another language',
       enabled: true,
       icon: '🌐',
@@ -84,7 +84,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'improve',
       label: '✨ Improve Text',
-      operation: 'improve',
+      operation: 'Improve the following text by fixing grammar errors, enhancing clarity, and improving overall readability while maintaining the original meaning and tone. Make the text more polished and professional. Only return the improved text without any additional commentary.',
       description: 'Improve grammar and style',
       enabled: true,
       icon: '✨',
@@ -93,7 +93,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'summarize',
       label: '📝 Summarize',
-      operation: 'summarize',
+      operation: 'Create a concise and accurate summary of the following text. Capture the main points and key information while significantly reducing the length. Maintain the essential meaning and important details. Only return the summary without any additional commentary.',
       description: 'Create a concise summary',
       enabled: true,
       icon: '📝',
@@ -102,7 +102,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'explain',
       label: '💡 Explain',
-      operation: 'explain',
+      operation: 'Explain the following text in simple, clear terms. Break down complex concepts, define technical terms, and provide context to make it easily understandable. Use examples if helpful. Focus on clarity and accessibility. Only return the explanation.',
       description: 'Explain complex concepts',
       enabled: false,
       icon: '💡',
@@ -111,7 +111,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'rewrite',
       label: '🔄 Rewrite',
-      operation: 'rewrite',
+      operation: 'Rewrite the following text using different words and sentence structures while preserving the original meaning. Make it fresh and engaging while maintaining the same tone and intent. Only return the rewritten text without any additional commentary.',
       description: 'Rewrite in different style',
       enabled: false,
       icon: '🔄',
@@ -120,7 +120,7 @@ class ContextMenuConfigService {
     ContextMenuConfig(
       id: 'expand',
       label: '📈 Expand',
-      operation: 'expand',
+      operation: 'Expand the following text by adding more detail, context, and relevant information. Elaborate on key points, provide examples, and make the content more comprehensive and informative while maintaining the original tone and style. Only return the expanded text.',
       description: 'Add more detail and context',
       enabled: false,
       icon: '📈',

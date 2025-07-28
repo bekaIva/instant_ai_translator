@@ -40,6 +40,9 @@ dependencies:
   
   # Shared preferences for persistent storage
   shared_preferences: ^2.2.2
+  
+  # HTTP client for API calls
+  http: ^1.1.0
 
 dev_dependencies:
   flutter_test:

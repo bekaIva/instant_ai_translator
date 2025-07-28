@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import '../native/system_integration_safe.dart';
 import 'context_menu_config_service.dart';
+import 'gemini_ai_service.dart';
 
 class ContextMenuAction {
   final String menuId;
@@ -96,6 +97,15 @@ class ProductionContextMenuService {
         _addLog('❌ Failed to initialize system integration');
         _updateStatus('Failed to initialize');
         return false;
+      }
+
+      // Test Gemini AI connection
+      _addLog('🔍 Testing Gemini AI connection...');
+      final aiConnected = await GeminiAIService.testConnection();
+      if (aiConnected) {
+        _addLog('✅ Gemini AI connection successful');
+      } else {
+        _addLog('⚠️  Gemini AI connection failed - will use fallback processing');
       }
 
       // Register menu items
@@ -264,12 +274,43 @@ class ProductionContextMenuService {
 
   // Process text based on operation type
   Future<String> _processText(String text, String operation) async {
-    _addLog('🤖 Processing text with operation: $operation');
+    _addLog('🤖 Processing text with Gemini AI...');
 
-    // Simulate processing delay
-    await Future.delayed(Duration(milliseconds: 3000));
+    try {
+      // Use Gemini AI to process the text with the operation as system instruction
+      final processedText = await GeminiAIService.processText(text, operation);
+      _addLog('✅ Gemini AI processing completed successfully');
+      return processedText;
+    } catch (e) {
+      _addLog('❌ Gemini AI processing failed: $e');
+      
+      // Fallback to simple processing to prevent complete failure
+      _addLog('🔄 Falling back to simple text processing...');
+      return _fallbackProcessText(text, operation);
+    }
+  }
 
-    switch (operation) {
+  // Fallback processing method (original mock implementations)
+  String _fallbackProcessText(String text, String operation) {
+    // Extract operation type from the detailed instruction
+    String operationType;
+    if (operation.toLowerCase().contains('translate')) {
+      operationType = 'translate';
+    } else if (operation.toLowerCase().contains('improve')) {
+      operationType = 'improve';
+    } else if (operation.toLowerCase().contains('summarize')) {
+      operationType = 'summarize';
+    } else if (operation.toLowerCase().contains('explain')) {
+      operationType = 'explain';
+    } else if (operation.toLowerCase().contains('rewrite')) {
+      operationType = 'rewrite';
+    } else if (operation.toLowerCase().contains('expand')) {
+      operationType = 'expand';
+    } else {
+      operationType = 'unknown';
+    }
+
+    switch (operationType) {
       case 'translate':
         return _translateText(text);
       case 'improve':
@@ -283,7 +324,7 @@ class ProductionContextMenuService {
       case 'expand':
         return _expandText(text);
       default:
-        return '[PROCESSED] $text';
+        return '[FALLBACK] $text';
     }
   }
 
@@ -406,6 +447,7 @@ class ProductionContextMenuService {
       'activeMenus': _activeConfigs.length,
       'systemCompatible': _systemIntegration.isSystemCompatible(),
       'desktopEnvironment': _systemIntegration.getDesktopEnvironment(),
+      'aiService': GeminiAIService.getApiInfo(),
     };
   }
 
@@ -417,14 +459,20 @@ class ProductionContextMenuService {
   // Test menu action (for UI testing)
   Future<void> testMenuAction(String menuId) async {
     try {
-      // Use sample text for testing instead of trying to get current selection
-      // which can cause issues when called from Flutter UI context
-      const sampleText = "This is sample text for testing the menu action.";
+      // Get the configuration for this menu action
+      final config = _activeConfigs.where((c) => c.id == menuId).firstOrNull;
+      if (config == null) {
+        _addLog('❌ Test failed: Unknown menu ID $menuId');
+        return;
+      }
 
-      _addLog('🧪 Testing menu action: $menuId with sample text');
+      // Use sample text for testing
+      const sampleText = "This is sample text for testing the AI processing functionality.";
 
-      // Process the test text
-      final processedText = await _processText(menuId, sampleText);
+      _addLog('🧪 Testing menu action: ${config.label} with sample text');
+
+      // Process the test text using the actual AI operation
+      final processedText = await _processText(sampleText, config.operation);
 
       // Create a test action record
       final action = ContextMenuAction(
@@ -450,6 +498,7 @@ class ProductionContextMenuService {
           processedText: "Test failed: $e",
           timestamp: DateTime.now(),
           success: false,
+          error: e.toString(),
         );
         _addAction(action);
       }
