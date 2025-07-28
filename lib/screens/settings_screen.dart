@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/ai_settings_service.dart';
 
 // AI Provider model
 class AIProvider {
@@ -30,12 +31,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   
   // Controllers for text fields
   late TextEditingController _modelController;
+  late TextEditingController _apiKeyController;
 
   // AI Provider Configuration
   String? _selectedProvider;
   String _apiKey = '';
   String _baseUrl = '';
   String _model = '';
+  
+  // Gemini-specific state
+  List<GeminiModel> _availableGeminiModels = [];
+  bool _loadingModels = false;
+  bool _testingConnection = false;
   
   // Ollama Settings
   String _ollamaServerUrl = 'http://localhost:11434';
@@ -48,13 +55,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _modelController = TextEditingController(text: _model);
+    _apiKeyController = TextEditingController(text: _apiKey);
     _initializeAIProviders();
     _loadOllamaModels();
+    _loadSavedSettings();
   }
 
   @override
   void dispose() {
     _modelController.dispose();
+    _apiKeyController.dispose();
     super.dispose();
   }
 
@@ -78,8 +88,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         id: 'google',
         name: 'Google Gemini',
         defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-        description: 'Gemini Pro and other Google AI models',
-        commonModels: ['gemini-pro', 'gemini-pro-vision'],
+        description: 'Gemini 1.5 Flash, Pro and other Google AI models',
+        commonModels: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'],
       ),
       const AIProvider(
         id: 'groq',
@@ -121,6 +131,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'orca-mini',
       ];
     });
+  }
+
+  /// Load saved AI settings
+  Future<void> _loadSavedSettings() async {
+    try {
+      final settings = await AISettingsService.loadSettings();
+      if (settings != null) {
+        setState(() {
+          _selectedProvider = settings.provider;
+          _apiKey = settings.apiKey;
+          _baseUrl = settings.baseUrl;
+          _model = settings.model;
+          _modelController.text = _model;
+          _apiKeyController.text = _apiKey;
+        });
+      }
+    } catch (e) {
+      print('Error loading settings: $e');
+    }
+  }
+
+  /// Load available Gemini models when API key is provided
+  Future<void> _loadGeminiModels() async {
+    if (_apiKey.isEmpty || _selectedProvider != 'google') return;
+    
+    setState(() {
+      _loadingModels = true;
+    });
+
+    try {
+      final models = await AISettingsService.getAvailableGeminiModels(_apiKey);
+      setState(() {
+        _availableGeminiModels = models;
+        _loadingModels = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loadingModels = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load models: $e'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -176,8 +234,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(width: 16),
                 OutlinedButton(
-                  onPressed: _testConnection,
-                  child: const Text('Test Connection'),
+                  onPressed: _testingConnection ? null : _testConnection,
+                  child: _testingConnection 
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Test Connection'),
                 ),
                 const SizedBox(width: 16),
                 OutlinedButton(
@@ -244,11 +308,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (value) {
                 setState(() {
                   _selectedProvider = value;
+                  _availableGeminiModels.clear(); // Clear previous models
                   if (value != null) {
                     final provider = _aiProviders.firstWhere((p) => p.id == value);
                     _baseUrl = provider.defaultBaseUrl;
                     _model = provider.commonModels.first;
                     _modelController.text = _model;
+                    
+                    // Auto-load models for Gemini if API key is available
+                    if (value == 'google' && _apiKey.isNotEmpty) {
+                      _loadGeminiModels();
+                    }
                   }
                 });
               },
@@ -259,17 +329,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
               
               // API Key
               TextField(
+                controller: _apiKeyController,
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: 'API Key',
                   hintText: 'Enter your API key',
                   border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.help_outline),
-                    onPressed: _showApiKeyHelp,
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_selectedProvider == 'google' && _apiKey.isNotEmpty)
+                        IconButton(
+                          icon: _loadingModels 
+                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.refresh),
+                          onPressed: _loadingModels ? null : _loadGeminiModels,
+                          tooltip: 'Load available models',
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.help_outline),
+                        onPressed: _showApiKeyHelp,
+                      ),
+                    ],
                   ),
                 ),
-                onChanged: (value) => _apiKey = value,
+                onChanged: (value) {
+                  setState(() {
+                    _apiKey = value;
+                  });
+                },
               ),
               
               const SizedBox(height: 16),
@@ -292,36 +380,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               
               // Model Selection
-              TextField(
-                decoration: InputDecoration(
-                  labelText: 'Model',
-                  hintText: _getModelHintForProvider(_selectedProvider!),
-                  border: const OutlineInputBorder(),
-                  helperText: 'Enter the exact model name from your provider',
-                  suffixIcon: PopupMenuButton<String>(
-                    icon: const Icon(Icons.help_outline),
-                    tooltip: 'Common models',
-                    onSelected: (value) {
-                      setState(() {
-                        _model = value;
-                        _modelController.text = value;
-                      });
-                    },
-                    itemBuilder: (context) => _getModelsForProvider(_selectedProvider!)
-                        .map((model) => PopupMenuItem<String>(
-                              value: model,
-                              child: Text(model),
-                            ))
-                        .toList(),
+              if (_selectedProvider == 'google' && _availableGeminiModels.isNotEmpty)
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: 'Model',
+                    border: OutlineInputBorder(),
+                    helperText: 'Select from available Gemini models',
                   ),
+                  value: _availableGeminiModels.any((m) => AISettingsService.getSimpleModelName(m.name) == _model) ? _model : null,
+                  hint: const Text('Select a model'),
+                  isExpanded: true,
+                  menuMaxHeight: 200, // Limit dropdown height
+                  items: _availableGeminiModels.map((model) {
+                    final simpleName = AISettingsService.getSimpleModelName(model.name);
+                    final displayName = model.displayName.isNotEmpty ? model.displayName : simpleName;
+                    return DropdownMenuItem<String>(
+                      value: simpleName,
+                      child: Tooltip(
+                        message: model.description.isNotEmpty ? model.description : displayName,
+                        child: Text(
+                          displayName,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _model = value ?? '';
+                      _modelController.text = _model;
+                    });
+                  },
+                )
+              else
+                // Fallback to text field for manual entry
+                TextField(
+                  decoration: InputDecoration(
+                    labelText: 'Model',
+                    hintText: _getModelHintForProvider(_selectedProvider!),
+                    border: const OutlineInputBorder(),
+                    helperText: _selectedProvider == 'google' 
+                        ? 'Enter API key and click refresh to load available models'
+                        : 'Enter the exact model name from your provider',
+                    suffixIcon: _selectedProvider != 'google' 
+                        ? PopupMenuButton<String>(
+                            icon: const Icon(Icons.help_outline),
+                            tooltip: 'Common models',
+                            onSelected: (value) {
+                              setState(() {
+                                _model = value;
+                                _modelController.text = value;
+                              });
+                            },
+                            itemBuilder: (context) => _getModelsForProvider(_selectedProvider!)
+                                .map((model) => PopupMenuItem<String>(
+                                      value: model,
+                                      child: Text(model),
+                                    ))
+                                .toList(),
+                          )
+                        : null,
+                  ),
+                  controller: _modelController,
+                  onChanged: (value) {
+                    setState(() {
+                      _model = value;
+                    });
+                  },
                 ),
-                controller: _modelController,
-                onChanged: (value) {
-                  setState(() {
-                    _model = value;
-                  });
-                },
-              ),
             ],
           ],
         ),
@@ -596,16 +723,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
 
+    setState(() {
+      _testingConnection = true;
+    });
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Testing connection...'),
       ),
     );
 
-    // TODO: Implement actual connection testing
-    await Future.delayed(const Duration(seconds: 2));
+    bool success = false;
 
-    if (mounted) {
+    try {
+      if (_selectedProvider == 'google') {
+        // Test Gemini connection
+        if (_model.isEmpty) {
+          throw Exception('Please select a model first');
+        }
+        success = await AISettingsService.testGeminiConnection(_apiKey, AISettingsService.getFullModelName(_model));
+      } else {
+        // For other providers, implement their specific test methods
+        await Future.delayed(const Duration(seconds: 2));
+        success = true; // Placeholder - implement actual tests for other providers
+      }
+    } catch (e) {
+      success = false;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Connection test failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+
+    setState(() {
+      _testingConnection = false;
+    });
+
+    if (mounted && success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Connection test successful'),
@@ -615,14 +773,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _saveSettings() {
-    // TODO: Save settings to storage
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Settings saved successfully'),
-        backgroundColor: Colors.green,
-      ),
-    );
+  void _saveSettings() async {
+    try {
+      if (_selectedProvider != null && _apiKey.isNotEmpty && _model.isNotEmpty) {
+        final settings = AISettings(
+          provider: _selectedProvider!,
+          apiKey: _apiKey,
+          baseUrl: _baseUrl,
+          model: _model,
+          enabled: true,
+        );
+        
+        final success = await AISettingsService.saveSettings(settings);
+        
+        if (success) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Settings saved successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } else {
+          throw Exception('Failed to save settings');
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please configure all required fields'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving settings: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _resetToDefaults() {
@@ -637,13 +830,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               setState(() {
                 // Reset AI configuration
                 _selectedProvider = null;
                 _apiKey = '';
                 _baseUrl = '';
                 _model = '';
+                _modelController.text = '';
+                _apiKeyController.text = '';
+                _availableGeminiModels.clear();
                 
                 // Reset other settings
                 _enableNotifications = true;
@@ -651,6 +847,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _ollamaServerUrl = 'http://localhost:11434';
                 _selectedOllamaModel = null;
               });
+              
+              // Clear saved settings
+              await AISettingsService.clearAllSettings();
+              
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(

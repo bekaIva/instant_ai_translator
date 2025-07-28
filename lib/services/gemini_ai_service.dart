@@ -1,13 +1,22 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'ai_settings_service.dart';
 
 class GeminiAIService {
-  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
-  static const String _apiKey = 'AIzaSyBsN3KkjjNqDWNvuR6mFUUSZsfQbOclGx0';
+  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
 
   /// Process text using Gemini AI with the given system instruction
   static Future<String> processText(String text, String systemInstruction) async {
     try {
+      // Load AI settings
+      final settings = await AISettingsService.loadSettings();
+      if (settings == null || settings.provider != 'google' || settings.apiKey.isEmpty || settings.model.isEmpty) {
+        throw Exception('Gemini AI not configured. Please configure your API key and model in Settings.');
+      }
+
+      // Ensure model has the full path format
+      final fullModelName = AISettingsService.getFullModelName(settings.model);
+
       // Prepare the request payload with proper system instruction
       final requestBody = {
         'contents': [
@@ -48,7 +57,7 @@ class GeminiAIService {
 
       // Make the API call
       final response = await http.post(
-        Uri.parse('$_baseUrl?key=$_apiKey'),
+        Uri.parse('$_baseUrl/$fullModelName:generateContent?key=${settings.apiKey}'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -88,21 +97,28 @@ class GeminiAIService {
   /// Test the Gemini AI connection
   static Future<bool> testConnection() async {
     try {
-      await processText('Hello', 'Respond with "Connection successful" if you receive this message.');
-      return true;
+      final settings = await AISettingsService.loadSettings();
+      if (settings == null || settings.provider != 'google' || settings.apiKey.isEmpty || settings.model.isEmpty) {
+        return false;
+      }
+
+      return await AISettingsService.testGeminiConnection(settings.apiKey, settings.model);
     } catch (e) {
       print('Gemini AI connection test failed: $e');
       return false;
     }
   }
 
-  /// Get API usage information (simplified)
-  static Map<String, dynamic> getApiInfo() {
+  /// Get API usage information
+  static Future<Map<String, dynamic>> getApiInfo() async {
+    final settings = await AISettingsService.loadSettings();
+    
     return {
       'service': 'Google Gemini AI',
-      'model': 'gemini-2.5-flash',
-      'apiKeyConfigured': _apiKey.isNotEmpty,
+      'model': settings?.model ?? 'Not configured',
+      'apiKeyConfigured': settings?.apiKey.isNotEmpty ?? false,
       'baseUrl': _baseUrl,
+      'configured': settings != null && settings.provider == 'google' && settings.apiKey.isNotEmpty,
     };
   }
 }
