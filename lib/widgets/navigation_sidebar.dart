@@ -29,16 +29,6 @@ class NavigationSidebar extends StatelessWidget {
           label: Text('Menu Manager'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.dashboard_outlined),
-          selectedIcon: Icon(Icons.dashboard),
-          label: Text('System Status'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.science_outlined),
-          selectedIcon: Icon(Icons.science),
-          label: Text('Phase 3 Demo'),
-        ),
-        NavigationRailDestination(
           icon: Icon(Icons.history_outlined),
           selectedIcon: Icon(Icons.history),
           label: Text('Activity'),

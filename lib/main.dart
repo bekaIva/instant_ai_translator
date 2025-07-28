@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/production_main_screen.dart';
 import 'screens/context_menu_manager_screen_v2.dart';
-import 'screens/system_status_screen.dart';
-import 'screens/phase3_demo_screen_v2.dart';
 import 'screens/activity_monitor_screen.dart';
 import 'screens/settings_screen.dart';
 import 'widgets/navigation_sidebar.dart';
@@ -59,8 +57,6 @@ class _MainAppState extends State<MainApp> {
   final List<Widget> _screens = [
     const ProductionMainScreen(),
     const ContextMenuManagerScreenV2(),
-    const SystemStatusScreen(),
-    const Phase3DemoScreenV2(),
     const ActivityMonitorScreen(),
     const SettingsScreen(),
   ];
