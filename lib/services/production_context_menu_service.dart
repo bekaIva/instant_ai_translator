@@ -105,7 +105,7 @@ class ProductionContextMenuService {
       if (aiConnected) {
         _addLog('✅ Gemini AI connection successful');
       } else {
-        _addLog('⚠️  Gemini AI connection failed - will use fallback processing');
+        _addLog('⚠️  Gemini AI connection failed - text processing may fail without valid API configuration');
       }
 
       // Register menu items
@@ -259,14 +259,26 @@ class ProductionContextMenuService {
     } catch (e) {
       _addLog('❌ Error processing menu action: $e');
 
+      final errorText = 'ERROR: ${e.toString()}';
+      
+      // Replace the text in the active application with error details
+      bool success = _systemIntegration.replaceSelection(errorText);
+
       final action = ContextMenuAction(
         menuId: menuId,
         originalText: selectedText,
-        processedText: selectedText,
+        processedText: errorText,
         timestamp: DateTime.now(),
-        success: false,
+        success: false, // Still mark as failed since AI processing failed
         error: e.toString(),
       );
+
+      if (success) {
+        _addLog('📝 Error details replaced in editor');
+      } else {
+        String? error = _systemIntegration.getLastError();
+        _addLog('❌ Failed to replace text with error details: ${error ?? 'Unknown error'}');
+      }
 
       _addAction(action);
     }
@@ -284,146 +296,14 @@ class ProductionContextMenuService {
     } catch (e) {
       _addLog('❌ Gemini AI processing failed: $e');
       
-      // Fallback to simple processing to prevent complete failure
-      _addLog('🔄 Falling back to simple text processing...');
-      return _fallbackProcessText(text, operation);
+      // Re-throw the error to let the caller handle it
+      rethrow;
     }
   }
 
   // Public method to process text without system integration (for reprocessing from activity monitor)
   Future<String> processTextOnly(String text, String operation) async {
     return await _processText(text, operation);
-  }
-
-  // Fallback processing method (original mock implementations)
-  String _fallbackProcessText(String text, String operation) {
-    // Extract operation type from the detailed instruction
-    String operationType;
-    if (operation.toLowerCase().contains('translate')) {
-      operationType = 'translate';
-    } else if (operation.toLowerCase().contains('improve')) {
-      operationType = 'improve';
-    } else if (operation.toLowerCase().contains('summarize')) {
-      operationType = 'summarize';
-    } else if (operation.toLowerCase().contains('explain')) {
-      operationType = 'explain';
-    } else if (operation.toLowerCase().contains('rewrite')) {
-      operationType = 'rewrite';
-    } else if (operation.toLowerCase().contains('expand')) {
-      operationType = 'expand';
-    } else {
-      operationType = 'unknown';
-    }
-
-    switch (operationType) {
-      case 'translate':
-        return _translateText(text);
-      case 'improve':
-        return _improveText(text);
-      case 'summarize':
-        return _summarizeText(text);
-      case 'explain':
-        return _explainText(text);
-      case 'rewrite':
-        return _rewriteText(text);
-      case 'expand':
-        return _expandText(text);
-      default:
-        return '[FALLBACK] $text';
-    }
-  }
-
-  // Simple text processing functions (to be replaced with actual AI later)
-  String _translateText(String text) {
-    // Simple Spanish translation simulation
-    final translations = <String, String>{
-      'hello': 'hola',
-      'world': 'mundo',
-      'good': 'bueno',
-      'bad': 'malo',
-      'yes': 'sí',
-      'no': 'no',
-      'thank you': 'gracias',
-      'please': 'por favor',
-      'how are you': 'cómo estás',
-      'goodbye': 'adiós',
-    };
-
-    String result = text.toLowerCase();
-    for (final entry in translations.entries) {
-      result = result.replaceAll(entry.key, entry.value);
-    }
-
-    return result != text.toLowerCase() ? result : '🌐 $text (ES)';
-  }
-
-  String _improveText(String text) {
-    String improved = text.trim();
-
-    // Capitalize first letter
-    if (improved.isNotEmpty) {
-      improved = improved[0].toUpperCase() + improved.substring(1);
-    }
-
-    // Fix common contractions
-    improved = improved.replaceAll('cant', "can't");
-    improved = improved.replaceAll('wont', "won't");
-    improved = improved.replaceAll('dont', "don't");
-    improved = improved.replaceAll('im', "I'm");
-    improved = improved.replaceAll('youre', "you're");
-
-    // Remove multiple spaces
-    improved = improved.replaceAll(RegExp(r'\s+'), ' ');
-
-    // Add punctuation if missing
-    if (!improved.endsWith('.') &&
-        !improved.endsWith('!') &&
-        !improved.endsWith('?')) {
-      improved += '.';
-    }
-
-    return improved;
-  }
-
-  String _summarizeText(String text) {
-    final words = text.split(' ');
-    if (words.length <= 10) return text;
-
-    // Take first 40% of words and add summary indicator
-    final summaryWords = words.take((words.length * 0.4).ceil()).toList();
-    return '📝 ${summaryWords.join(' ')}... (summary)';
-  }
-
-  String _explainText(String text) {
-    // Simple explanation template
-    return '💡 Explanation: "$text" refers to a concept that can be understood as... (This would be a detailed AI-generated explanation)';
-  }
-
-  String _rewriteText(String text) {
-    // Simple rewriting examples
-    final rewrites = <String, String>{
-      'good': 'excellent',
-      'bad': 'poor',
-      'big': 'large',
-      'small': 'tiny',
-      'fast': 'quick',
-      'slow': 'sluggish',
-    };
-
-    String result = text;
-    for (final entry in rewrites.entries) {
-      result = result.replaceAll(
-        RegExp(entry.key, caseSensitive: false),
-        entry.value,
-      );
-    }
-
-    return result != text ? result : '🔄 $text (rewritten)';
-  }
-
-  String _expandText(String text) {
-    // Simple expansion
-    return '📈 $text (with additional context and detailed explanations that provide comprehensive understanding of the topic)';
   }
 
   // Reload configurations and re-register menus
@@ -500,7 +380,7 @@ class ProductionContextMenuService {
         final action = ContextMenuAction(
           menuId: menuId,
           originalText: "Test sample text",
-          processedText: "Test failed: $e",
+          processedText: "ERROR: ${e.toString()}",
           timestamp: DateTime.now(),
           success: false,
           error: e.toString(),
