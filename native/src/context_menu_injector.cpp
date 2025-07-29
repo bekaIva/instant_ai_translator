@@ -16,6 +16,7 @@ static int menu_item_count = 0;
 static MenuActionCallback menu_action_callback = NULL;
 static GtkWidget* popup_menu = NULL;
 static SelectionData* current_selection = NULL;
+static GtkWidget* current_menu_window = NULL; // Track current menu window for toggle functionality
 
 // Global hotkey monitoring
 static Display* x_display = NULL;
@@ -108,14 +109,8 @@ static GtkWidget* create_context_menu(SelectionData* selection) {
 static void on_menu_button_clicked(GtkWidget* button, gpointer data) {
     const char* menu_id = (const char*)g_object_get_data(G_OBJECT(button), "menu_id");
     GtkWidget* window = (GtkWidget*)g_object_get_data(G_OBJECT(button), "window");
-    guint timeout_id = GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(window), "timeout_id"));
     
     printf("Menu item clicked: %s\n", menu_id);
-    
-    // Remove timeout before destroying window
-    if (timeout_id > 0) {
-        g_source_remove(timeout_id);
-    }
     
     if (current_selection) {
         printf("Processing selection: %s\n", current_selection->text);
@@ -140,26 +135,23 @@ static void on_menu_button_clicked(GtkWidget* button, gpointer data) {
         }
     }
     
-    gtk_widget_destroy(window);
-}
-
-// Callback for window timeout
-static gboolean on_window_timeout(gpointer data) {
-    GtkWidget* window = (GtkWidget*)data;
-    if (GTK_IS_WIDGET(window)) {
-        g_object_set_data(G_OBJECT(window), "timeout_id", GUINT_TO_POINTER(0));
+    // Close menu and reset state
+    if (window) {
         gtk_widget_destroy(window);
+        current_menu_window = NULL;
     }
-    return FALSE;
 }
 
-// Callback for focus out event
+// Callback for window destroy event
+static void on_window_destroy(GtkWidget* window, gpointer data) {
+    printf("Menu window destroyed\n");
+    current_menu_window = NULL;
+}
+
+// Callback for focus out event (removed timeout handling since we don't use timeout anymore)
 static gboolean on_window_focus_out(GtkWidget* window, GdkEvent* event, gpointer data) {
-    guint timeout_id = GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(window), "timeout_id"));
-    if (timeout_id > 0) {
-        g_source_remove(timeout_id);
-    }
     gtk_widget_destroy(window);
+    current_menu_window = NULL;
     return FALSE;
 }
 
@@ -277,12 +269,14 @@ static gboolean create_menu_in_main_thread(gpointer data) {
     // Position the window
     gtk_window_move(GTK_WINDOW(window), x, y);
     
+    // Track this window for toggle functionality
+    current_menu_window = window;
+    
     // Show the window
     gtk_widget_show_all(window);
     
-    // Auto-close after 10 seconds
-    guint timeout_id = g_timeout_add(10000, on_window_timeout, window);
-    g_object_set_data(G_OBJECT(window), "timeout_id", GUINT_TO_POINTER(timeout_id));
+    // Connect destroy signal to reset tracking
+    g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), NULL);
     
     // Close on focus out
     g_signal_connect(window, "focus-out-event", G_CALLBACK(on_window_focus_out), NULL);
@@ -359,18 +353,27 @@ static gpointer hotkey_monitor_thread(gpointer data) {
                     
                     printf("🎯 Hotkey triggered: Ctrl+Shift+M detected!\n");
                     
-                    // Get current selection
-                    SelectionData* selection = get_selected_text();
-                    if (selection && selection->text && strlen(selection->text) > 0) {
-                        printf("📝 Showing menu for selected text: '%s'\n", selection->text);
-                        
-                        // Show menu at mouse position
-                        show_menu_at_position(selection->x, selection->y, selection);
+                    // Check if menu is currently open - toggle functionality
+                    if (current_menu_window && GTK_IS_WIDGET(current_menu_window)) {
+                        printf("🔽 Menu is open - closing it\n");
+                        gtk_widget_destroy(current_menu_window);
+                        current_menu_window = NULL;
                     } else {
-                        printf("⚠️  No text selected - showing simple notification\n");
+                        printf("🔼 Menu is closed - opening it\n");
                         
-                        // Show a simple notification that hotkey works (thread-safe)
-                        show_no_text_notification();
+                        // Get current selection
+                        SelectionData* selection = get_selected_text();
+                        if (selection && selection->text && strlen(selection->text) > 0) {
+                            printf("📝 Showing menu for selected text: '%s'\n", selection->text);
+                            
+                            // Show menu at mouse position
+                            show_menu_at_position(selection->x, selection->y, selection);
+                        } else {
+                            printf("⚠️  No text selected - showing simple notification\n");
+                            
+                            // Show a simple notification that hotkey works (thread-safe)
+                            show_no_text_notification();
+                        }
                     }
                 }
             }
@@ -388,6 +391,13 @@ static gpointer hotkey_monitor_thread(gpointer data) {
 
 // Initialize context menu system
 int init_context_menu_system() {
+    // Initialize X11 threading support before any X11 calls
+    if (!XInitThreads()) {
+        printf("Warning: XInitThreads() failed - X11 threading may not be safe\n");
+    } else {
+        printf("✅ X11 threading initialized successfully\n");
+    }
+    
     // Open X display for hotkey monitoring
     x_display = XOpenDisplay(NULL);
     if (!x_display) {
@@ -438,7 +448,11 @@ void cleanup_context_menu_system() {
         printf("Global hotkey unregistered\n");
     }
     
-    // Cleanup menu
+    // Cleanup menu windows
+    if (current_menu_window) {
+        gtk_widget_destroy(current_menu_window);
+        current_menu_window = NULL;
+    }
     if (popup_menu) {
         gtk_widget_destroy(popup_menu);
         popup_menu = NULL;
