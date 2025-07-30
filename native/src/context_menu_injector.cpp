@@ -10,6 +10,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// Forward declarations
+static void show_no_text_notification();
+
 // Menu state
 static MenuItem* registered_menu_items = NULL;
 static int menu_item_count = 0;
@@ -112,13 +115,15 @@ static void on_menu_button_clicked(GtkWidget* button, gpointer data) {
     
     printf("Menu item clicked: %s\n", menu_id);
     
-    if (current_selection) {
-        printf("Processing selection: %s\n", current_selection->text);
+    // Always get fresh selection data when processing action
+    SelectionData* fresh_selection = get_selected_text();
+    if (fresh_selection && fresh_selection->text && strlen(fresh_selection->text) > 0) {
+        printf("Processing fresh selection: %s\n", fresh_selection->text);
         
         // Call the callback if registered
         if (menu_action_callback) {
             printf("Calling menu action callback for: %s\n", menu_id);
-            menu_action_callback(menu_id, current_selection);
+            menu_action_callback(menu_id, fresh_selection);
         } else {
             // Fallback: write action to file for Flutter processing (no native replacement)
             printf("No callback registered, delegating to Flutter via file\n");
@@ -126,19 +131,38 @@ static void on_menu_button_clicked(GtkWidget* button, gpointer data) {
             // Write action to file for Flutter to pick up and process
             FILE* action_file = fopen("/tmp/instant_translator_action.txt", "w");
             if (action_file) {
-                fprintf(action_file, "%s\t\n%s\n", menu_id, current_selection->text);
+                fprintf(action_file, "%s\t\n%s\n", menu_id, fresh_selection->text);
                 fclose(action_file);
                 printf("Action written to file for Flutter pickup\n");
             }
             
             // Don't do native replacement - let Flutter handle everything
         }
+        
+        // Clean up fresh selection data
+        free_selection_data(fresh_selection);
+    } else {
+        printf("❌ Error: No text selected when menu action was triggered!\n");
+        
+        // Clean up invalid selection data
+        if (fresh_selection) {
+            free_selection_data(fresh_selection);
+        }
+        
+        // Show error notification
+        show_no_text_notification();
     }
     
     // Close menu and reset state
     if (window) {
         gtk_widget_destroy(window);
         current_menu_window = NULL;
+    }
+    
+    // Clear cached selection since menu is closing
+    if (current_selection) {
+        free_selection_data(current_selection);
+        current_selection = NULL;
     }
 }
 
@@ -168,9 +192,9 @@ static gboolean show_notification_in_main_thread(gpointer data) {
     
     GtkWidget* dialog = gtk_message_dialog_new(NULL,
         GTK_DIALOG_MODAL,
-        GTK_MESSAGE_INFO,
+        GTK_MESSAGE_WARNING,
         GTK_BUTTONS_OK,
-        "Instant AI Translator\n\nHotkey Ctrl+Shift+M detected!\nPlease select some text first.");
+        "Instant AI Translator\n\nNo text selected!\n\nPlease select some text first, then press Ctrl+Shift+M to show the AI translation menu.");
     
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
@@ -361,17 +385,34 @@ static gpointer hotkey_monitor_thread(gpointer data) {
                     } else {
                         printf("🔼 Menu is closed - opening it\n");
                         
-                        // Get current selection
+                        // ALWAYS get fresh selection data - don't use cached data
                         SelectionData* selection = get_selected_text();
                         if (selection && selection->text && strlen(selection->text) > 0) {
                             printf("📝 Showing menu for selected text: '%s'\n", selection->text);
                             
+                            // Clear old cached selection before setting new one
+                            if (current_selection && current_selection != selection) {
+                                free_selection_data(current_selection);
+                            }
+                            current_selection = selection;
+                            
                             // Show menu at mouse position
                             show_menu_at_position(selection->x, selection->y, selection);
                         } else {
-                            printf("⚠️  No text selected - showing simple notification\n");
+                            printf("⚠️  No text selected - showing error notification\n");
                             
-                            // Show a simple notification that hotkey works (thread-safe)
+                            // Clean up invalid selection data
+                            if (selection) {
+                                free_selection_data(selection);
+                            }
+                            
+                            // Clear cached selection since nothing is selected
+                            if (current_selection) {
+                                free_selection_data(current_selection);
+                                current_selection = NULL;
+                            }
+                            
+                            // Show error notification that user must select text first
                             show_no_text_notification();
                         }
                     }
