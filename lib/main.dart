@@ -1,11 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'screens/production_main_screen.dart';
 import 'screens/context_menu_manager_screen_v2.dart';
 import 'screens/activity_monitor_screen.dart';
 import 'screens/settings_screen.dart';
 import 'widgets/navigation_sidebar.dart';
+import 'services/gemini_ai_service.dart';
 
-void main() {
+/// Register Android Process Text bridge:
+/// - Android side uses a FlutterEngine to call this channel with:
+///   method: "processText", args: { "text": String, "operation": String }
+/// - We run the same processing path as Linux: GeminiAIService.processText
+Future<void> _registerAndroidProcessChannel() async {
+  // Ensure bindings so plugins (like shared_preferences) can initialize if needed
+  WidgetsFlutterBinding.ensureInitialized();
+
+  const channel = MethodChannel('instant_ai/process');
+  channel.setMethodCallHandler((call) async {
+    if (call.method == 'processText') {
+      final Map<dynamic, dynamic> raw = call.arguments as Map<dynamic, dynamic>? ?? {};
+      final text = (raw['text'] as String?) ?? '';
+      final operation = (raw['operation'] as String?) ?? '';
+      // Use the same processing logic used elsewhere
+      final result = await GeminiAIService.processText(text, operation);
+      return result;
+    }
+    throw PlatformException(code: 'UNIMPLEMENTED', message: 'Method not implemented: ${call.method}');
+  });
+}
+
+/// Background entrypoint for Android headless engine.
+/// This avoids launching the Flutter UI when ProcessTextActivity needs AI processing.
+@pragma('vm:entry-point')
+void processMain() {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Fire-and-forget channel registration; engine stays alive long enough for a single call.
+  _registerAndroidProcessChannel();
+}
+
+void main() async {
+  await _registerAndroidProcessChannel();
   runApp(const InstantTranslatorApp());
 }
 
@@ -83,4 +117,3 @@ class _MainAppState extends State<MainApp> {
     );
   }
 }
-

@@ -2,32 +2,9 @@ import 'dart:ffi';
 import 'dart:io';
 import 'package:ffi/ffi.dart';
 
-// Native library loading
-final DynamicLibrary _nativeLib = () {
-  if (Platform.isLinux) {
-    // Try multiple paths for the native library
-    final possiblePaths = [
-      'lib/native/libs/libinstant_translator_native.so',  // Development mode
-      './lib/native/libs/libinstant_translator_native.so', // Development mode with relative path
-      'lib/libinstant_translator_native.so',              // Release bundle mode
-      './lib/libinstant_translator_native.so',            // Release bundle with relative path
-      'libinstant_translator_native.so',                  // System library path
-    ];
-    
-    for (final path in possiblePaths) {
-      try {
-        return DynamicLibrary.open(path);
-      } catch (e) {
-        // Continue to next path
-      }
-    }
-    
-    throw UnsupportedError('Could not find libinstant_translator_native.so in any of: ${possiblePaths.join(', ')}');
-  }
-  throw UnsupportedError('Platform ${Platform.operatingSystem} is not supported');
-}();
-
-// Native structures
+// =======================
+// FFI data structures
+// =======================
 final class SelectionData extends Struct {
   external Pointer<Utf8> text;
   @Int32()
@@ -48,7 +25,7 @@ final class MenuItem extends Struct {
   external int enabled;
 }
 
-// Status codes
+// Status codes (must match native)
 class StatusCode {
   static const int success = 0;
   static const int errorInit = -1;
@@ -67,91 +44,201 @@ typedef MenuActionCallbackDart = void Function(Pointer<Utf8>, Pointer<SelectionD
 
 // Native function signatures
 typedef InitSystemHooksNative = Int32 Function();
-typedef InitSystemHooksDart = int Function();
-
 typedef CleanupSystemHooksNative = Void Function();
-typedef CleanupSystemHooksDart = void Function();
-
 typedef RegisterContextMenuNative = Int32 Function(Pointer<MenuItem>, Int32);
-typedef RegisterContextMenuDart = int Function(Pointer<MenuItem>, int);
-
 typedef GetCurrentSelectionNative = Pointer<SelectionData> Function();
-typedef GetCurrentSelectionDart = Pointer<SelectionData> Function();
-
 typedef FreeSelectionDataNative = Void Function(Pointer<SelectionData>);
-typedef FreeSelectionDataDart = void Function(Pointer<SelectionData>);
-
 typedef ReplaceSelectionNative = Int32 Function(Pointer<Utf8>);
-typedef ReplaceSelectionDart = int Function(Pointer<Utf8>);
-
 typedef SetSelectionCallbackNative = Int32 Function(Pointer<NativeFunction<SelectionCallbackNative>>);
-typedef SetSelectionCallbackDart = int Function(Pointer<NativeFunction<SelectionCallbackNative>>);
-
 typedef SetMenuActionCallbackNative = Int32 Function(Pointer<NativeFunction<MenuActionCallbackNative>>);
-typedef SetMenuActionCallbackDart = int Function(Pointer<NativeFunction<MenuActionCallbackNative>>);
-
 typedef IsSystemCompatibleNative = Int32 Function();
-typedef IsSystemCompatibleDart = int Function();
-
 typedef GetDesktopEnvironmentNative = Pointer<Utf8> Function();
-typedef GetDesktopEnvironmentDart = Pointer<Utf8> Function();
-
 typedef GetLastErrorNative = Pointer<Utf8> Function();
-typedef GetLastErrorDart = Pointer<Utf8> Function();
-
 typedef FreeStringNative = Void Function(Pointer<Utf8>);
-typedef FreeStringDart = void Function(Pointer<Utf8>);
 
-// Native function bindings
-final InitSystemHooksDart _initSystemHooks = _nativeLib
-    .lookup<NativeFunction<InitSystemHooksNative>>('init_system_hooks')
-    .asFunction();
+// =======================
+// Platform-safe bindings
+// =======================
 
-final CleanupSystemHooksDart _cleanupSystemHooks = _nativeLib
-    .lookup<NativeFunction<CleanupSystemHooksNative>>('cleanup_system_hooks')
-    .asFunction();
+abstract class _NativeApi {
+  int initSystemHooks();
+  void cleanupSystemHooks();
 
-final RegisterContextMenuDart _registerContextMenu = _nativeLib
-    .lookup<NativeFunction<RegisterContextMenuNative>>('register_context_menu')
-    .asFunction();
+  int registerContextMenu(Pointer<MenuItem> items, int count);
+  Pointer<SelectionData> getCurrentSelection();
+  void freeSelectionData(Pointer<SelectionData> data);
 
-final GetCurrentSelectionDart _getCurrentSelection = _nativeLib
-    .lookup<NativeFunction<GetCurrentSelectionNative>>('get_current_selection')
-    .asFunction();
+  int replaceSelection(Pointer<Utf8> newText);
 
-final FreeSelectionDataDart _freeSelectionData = _nativeLib
-    .lookup<NativeFunction<FreeSelectionDataNative>>('free_selection_data')
-    .asFunction();
+  int setSelectionCallback(Pointer<NativeFunction<SelectionCallbackNative>> cb);
+  int setMenuActionCallback(Pointer<NativeFunction<MenuActionCallbackNative>> cb);
 
-final ReplaceSelectionDart _replaceSelection = _nativeLib
-    .lookup<NativeFunction<ReplaceSelectionNative>>('replace_selection')
-    .asFunction();
+  int isSystemCompatible();
 
-final SetSelectionCallbackDart _setSelectionCallback = _nativeLib
-    .lookup<NativeFunction<SetSelectionCallbackNative>>('set_selection_callback')
-    .asFunction();
+  Pointer<Utf8> getDesktopEnvironment();
+  Pointer<Utf8> getLastError();
+  void freeString(Pointer<Utf8> str);
+}
 
-final SetMenuActionCallbackDart _setMenuActionCallback = _nativeLib
-    .lookup<NativeFunction<SetMenuActionCallbackNative>>('set_menu_action_callback')
-    .asFunction();
+class _LinuxNativeApi implements _NativeApi {
+  late final DynamicLibrary _lib;
 
-final IsSystemCompatibleDart _isSystemCompatible = _nativeLib
-    .lookup<NativeFunction<IsSystemCompatibleNative>>('is_system_compatible')
-    .asFunction();
+  // Late-bound native functions (looked up once on first use)
+  late final int Function() _initSystemHooks =
+      _lib.lookup<NativeFunction<InitSystemHooksNative>>('init_system_hooks').asFunction();
+  late final void Function() _cleanupSystemHooks =
+      _lib.lookup<NativeFunction<CleanupSystemHooksNative>>('cleanup_system_hooks').asFunction();
 
-final GetDesktopEnvironmentDart _getDesktopEnvironment = _nativeLib
-    .lookup<NativeFunction<GetDesktopEnvironmentNative>>('get_desktop_environment')
-    .asFunction();
+  late final int Function(Pointer<MenuItem>, int) _registerContextMenu =
+      _lib.lookup<NativeFunction<RegisterContextMenuNative>>('register_context_menu').asFunction();
 
-final GetLastErrorDart _getLastError = _nativeLib
-    .lookup<NativeFunction<GetLastErrorNative>>('get_last_error')
-    .asFunction();
+  late final Pointer<SelectionData> Function() _getCurrentSelection =
+      _lib.lookup<NativeFunction<GetCurrentSelectionNative>>('get_current_selection').asFunction();
 
-final FreeStringDart _freeString = _nativeLib
-    .lookup<NativeFunction<FreeStringNative>>('free_string')
-    .asFunction();
+  late final void Function(Pointer<SelectionData>) _freeSelectionData =
+      _lib.lookup<NativeFunction<FreeSelectionDataNative>>('free_selection_data').asFunction();
 
-// Dart wrapper classes
+  late final int Function(Pointer<Utf8>) _replaceSelection =
+      _lib.lookup<NativeFunction<ReplaceSelectionNative>>('replace_selection').asFunction();
+
+  late final int Function(Pointer<NativeFunction<SelectionCallbackNative>>) _setSelectionCallback =
+      _lib.lookup<NativeFunction<SetSelectionCallbackNative>>('set_selection_callback').asFunction();
+
+  late final int Function(Pointer<NativeFunction<MenuActionCallbackNative>>) _setMenuActionCallback =
+      _lib.lookup<NativeFunction<SetMenuActionCallbackNative>>('set_menu_action_callback').asFunction();
+
+  late final int Function() _isSystemCompatible =
+      _lib.lookup<NativeFunction<IsSystemCompatibleNative>>('is_system_compatible').asFunction();
+
+  late final Pointer<Utf8> Function() _getDesktopEnvironment =
+      _lib.lookup<NativeFunction<GetDesktopEnvironmentNative>>('get_desktop_environment').asFunction();
+
+  late final Pointer<Utf8> Function() _getLastError =
+      _lib.lookup<NativeFunction<GetLastErrorNative>>('get_last_error').asFunction();
+
+  late final void Function(Pointer<Utf8>) _freeString =
+      _lib.lookup<NativeFunction<FreeStringNative>>('free_string').asFunction();
+
+  _LinuxNativeApi() {
+    _lib = _openLibrary();
+  }
+
+  DynamicLibrary _openLibrary() {
+    final possiblePaths = <String>[
+      'lib/native/libs/libinstant_translator_native.so', // Dev
+      './lib/native/libs/libinstant_translator_native.so',
+      'lib/libinstant_translator_native.so', // Bundle
+      './lib/libinstant_translator_native.so',
+      'libinstant_translator_native.so', // System
+    ];
+    for (final path in possiblePaths) {
+      try {
+        return DynamicLibrary.open(path);
+      } catch (_) {
+        // try next
+      }
+    }
+    // As a last resort, try process lookup (if linked)
+    try {
+      return DynamicLibrary.process();
+    } catch (_) {
+      // ignore
+    }
+    throw UnsupportedError(
+        'Could not find libinstant_translator_native.so in: ${possiblePaths.join(', ')}');
+  }
+
+  Pointer<T> _lookup<T extends NativeType>(String symbol) {
+    return _lib.lookup<T>(symbol);
+  }
+
+  @override
+  int initSystemHooks() => _initSystemHooks();
+
+  @override
+  void cleanupSystemHooks() => _cleanupSystemHooks();
+
+  @override
+  int registerContextMenu(Pointer<MenuItem> items, int count) =>
+      _registerContextMenu(items, count);
+
+  @override
+  Pointer<SelectionData> getCurrentSelection() => _getCurrentSelection();
+
+  @override
+  void freeSelectionData(Pointer<SelectionData> data) => _freeSelectionData(data);
+
+  @override
+  int replaceSelection(Pointer<Utf8> newText) => _replaceSelection(newText);
+
+  @override
+  int setSelectionCallback(Pointer<NativeFunction<SelectionCallbackNative>> cb) =>
+      _setSelectionCallback(cb);
+
+  @override
+  int setMenuActionCallback(Pointer<NativeFunction<MenuActionCallbackNative>> cb) =>
+      _setMenuActionCallback(cb);
+
+  @override
+  int isSystemCompatible() => _isSystemCompatible();
+
+  @override
+  Pointer<Utf8> getDesktopEnvironment() => _getDesktopEnvironment();
+
+  @override
+  Pointer<Utf8> getLastError() => _getLastError();
+
+  @override
+  void freeString(Pointer<Utf8> str) => _freeString(str);
+}
+
+// No-op implementation for non-Linux platforms (Android, macOS, Windows, iOS, Web)
+class _NoopNativeApi implements _NativeApi {
+  @override
+  void cleanupSystemHooks() {}
+
+  @override
+  void freeSelectionData(Pointer<SelectionData> data) {}
+
+  @override
+  void freeString(Pointer<Utf8> str) {}
+
+  @override
+  Pointer<SelectionData> getCurrentSelection() => Pointer.fromAddress(0);
+
+  @override
+  Pointer<Utf8> getDesktopEnvironment() => Pointer.fromAddress(0);
+
+  @override
+  Pointer<Utf8> getLastError() => Pointer.fromAddress(0);
+
+  @override
+  int initSystemHooks() => StatusCode.errorInit;
+
+  @override
+  int isSystemCompatible() => 0;
+
+  @override
+  int registerContextMenu(Pointer<MenuItem> items, int count) => StatusCode.errorInit;
+
+  @override
+  int replaceSelection(Pointer<Utf8> newText) => StatusCode.errorInit;
+
+  @override
+  int setMenuActionCallback(Pointer<NativeFunction<MenuActionCallbackNative>> cb) =>
+      StatusCode.errorInit;
+
+  @override
+  int setSelectionCallback(Pointer<NativeFunction<SelectionCallbackNative>> cb) =>
+      StatusCode.errorInit;
+}
+
+// Pick the proper backend once (import-safe)
+final _NativeApi _api = Platform.isLinux ? _LinuxNativeApi() : _NoopNativeApi();
+
+// =======================
+// Dart-side convenience models
+// =======================
 class SelectionInfo {
   final String text;
   final int x;
@@ -209,7 +296,9 @@ class MenuItemInfo {
   }
 }
 
-// Main system integration class
+// =======================
+// Public SystemIntegration facade (platform-safe)
+// =======================
 class SystemIntegration {
   static final SystemIntegration _instance = SystemIntegration._internal();
   factory SystemIntegration() => _instance;
@@ -219,7 +308,7 @@ class SystemIntegration {
   void Function(SelectionInfo)? _onSelectionChanged;
   void Function(String menuId, SelectionInfo selection)? _onMenuAction;
 
-  // Native callback wrappers
+  // Native callback wrappers (allocated only if used and supported)
   late final Pointer<NativeFunction<SelectionCallbackNative>> _selectionCallbackPtr;
   late final Pointer<NativeFunction<MenuActionCallbackNative>> _menuActionCallbackPtr;
 
@@ -229,13 +318,13 @@ class SystemIntegration {
   Future<bool> initialize({bool enableCallbacks = false}) async {
     if (_initialized) return true;
 
-    // Check system compatibility first
+    // Check system compatibility first (Linux-only returns 1)
     if (!isSystemCompatible()) {
+      // Non-Linux platforms will return false here and we remain a no-op.
       return false;
     }
 
-    // Initialize native system
-    int result = _initSystemHooks();
+    final result = _api.initSystemHooks();
     if (result != StatusCode.success) {
       return false;
     }
@@ -243,19 +332,23 @@ class SystemIntegration {
     // Only set up callbacks if explicitly requested and safe
     if (enableCallbacks) {
       try {
-        // Set up native callbacks
-        _selectionCallbackPtr = Pointer.fromFunction<SelectionCallbackNative>(_onSelectionChangedNative);
-        _menuActionCallbackPtr = Pointer.fromFunction<MenuActionCallbackNative>(_onMenuActionNative);
+        _selectionCallbackPtr =
+            Pointer.fromFunction<SelectionCallbackNative>(_onSelectionChangedNative);
+        _menuActionCallbackPtr =
+            Pointer.fromFunction<MenuActionCallbackNative>(_onMenuActionNative);
 
-        // Set callbacks
-        _setSelectionCallback(_selectionCallbackPtr);
-        _setMenuActionCallback(_menuActionCallbackPtr);
+        _api.setSelectionCallback(_selectionCallbackPtr);
+        _api.setMenuActionCallback(_menuActionCallbackPtr);
+        // ignore: avoid_print
         print('✅ Callbacks enabled');
       } catch (e) {
+        // ignore: avoid_print
         print('⚠️  Callback setup failed: $e');
+        // ignore: avoid_print
         print('   Continuing without callbacks');
       }
     } else {
+      // ignore: avoid_print
       print('📋 Running without callbacks to avoid isolate issues');
     }
 
@@ -266,48 +359,48 @@ class SystemIntegration {
   // Cleanup system integration
   void cleanup() {
     if (!_initialized) return;
-
-    _cleanupSystemHooks();
+    _api.cleanupSystemHooks();
     _initialized = false;
   }
 
-  // Check if system is compatible
+  // Check if system is compatible (Linux returns 1; others 0)
   bool isSystemCompatible() {
-    return _isSystemCompatible() == 1;
+    try {
+      return _api.isSystemCompatible() == 1;
+    } catch (_) {
+      return false;
+    }
   }
 
-  // Get desktop environment
+  // Get desktop environment (Linux only)
   String getDesktopEnvironment() {
-    final ptr = _getDesktopEnvironment();
+    final ptr = _api.getDesktopEnvironment();
     if (ptr == nullptr) return 'unknown';
-    
     final result = ptr.toDartString();
-    _freeString(ptr);
+    _api.freeString(ptr);
     return result;
   }
 
-  // Get last error
+  // Get last error (Linux only)
   String? getLastError() {
-    final ptr = _getLastError();
+    final ptr = _api.getLastError();
     if (ptr == nullptr) return null;
-    
     final result = ptr.toDartString();
-    _freeString(ptr);
+    _api.freeString(ptr);
     return result;
   }
 
-  // Register menu items
+  // Register menu items (Linux only)
   bool registerMenuItems(List<MenuItemInfo> menuItems) {
     if (!_initialized || menuItems.isEmpty) return false;
 
-    // Allocate native menu items array
     final menuItemsPtr = calloc<MenuItem>(menuItems.length);
 
     try {
       for (int i = 0; i < menuItems.length; i++) {
         final item = menuItems[i];
         final nativeItem = (menuItemsPtr + i).ref;
-        
+
         nativeItem.id = item.id.toNativeUtf8();
         nativeItem.label = item.label.toNativeUtf8();
         nativeItem.operation = item.operation.toNativeUtf8();
@@ -315,11 +408,9 @@ class SystemIntegration {
         nativeItem.enabled = item.enabled ? 1 : 0;
       }
 
-      int result = _registerContextMenu(menuItemsPtr, menuItems.length);
+      final result = _api.registerContextMenu(menuItemsPtr, menuItems.length);
       return result == StatusCode.success;
-
     } finally {
-      // Free allocated memory
       for (int i = 0; i < menuItems.length; i++) {
         final nativeItem = (menuItemsPtr + i).ref;
         calloc.free(nativeItem.id);
@@ -331,11 +422,11 @@ class SystemIntegration {
     }
   }
 
-  // Get current selection
+  // Get current selection (Linux only)
   SelectionInfo? getCurrentSelection() {
     if (!_initialized) return null;
 
-    final selectionPtr = _getCurrentSelection();
+    final selectionPtr = _api.getCurrentSelection();
     if (selectionPtr == nullptr) return null;
 
     try {
@@ -348,34 +439,34 @@ class SystemIntegration {
         length: selection.length,
       );
     } finally {
-      _freeSelectionData(selectionPtr);
+      _api.freeSelectionData(selectionPtr);
     }
   }
 
-  // Replace selected text
+  // Replace selected text (Linux only)
   bool replaceSelection(String newText) {
     if (!_initialized) return false;
 
     final textPtr = newText.toNativeUtf8();
     try {
-      int result = _replaceSelection(textPtr);
+      final result = _api.replaceSelection(textPtr);
       return result == StatusCode.success;
     } finally {
       calloc.free(textPtr);
     }
   }
 
-  // Set selection change callback
+  // Set selection change callback (Dart-side)
   void setOnSelectionChanged(void Function(SelectionInfo)? callback) {
     _onSelectionChanged = callback;
   }
 
-  // Set menu action callback
+  // Set menu action callback (Dart-side)
   void setOnMenuAction(void Function(String menuId, SelectionInfo selection)? callback) {
     _onMenuAction = callback;
   }
 
-  // Native callback implementations
+  // Native callback implementations (Linux-only)
   static void _onSelectionChangedNative(Pointer<SelectionData> selectionPtr) {
     final instance = SystemIntegration._instance;
     if (instance._onSelectionChanged == null || selectionPtr == nullptr) return;
@@ -392,6 +483,7 @@ class SystemIntegration {
 
       instance._onSelectionChanged!(selectionInfo);
     } catch (e) {
+      // ignore: avoid_print
       print('Error in selection callback: $e');
     }
   }
@@ -413,6 +505,7 @@ class SystemIntegration {
 
       instance._onMenuAction!(menuId, selectionInfo);
     } catch (e) {
+      // ignore: avoid_print
       print('Error in menu action callback: $e');
     }
   }
