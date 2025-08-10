@@ -88,15 +88,49 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends State<MainApp> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const ProductionMainScreen(),
-    const ContextMenuManagerScreenV2(),
-    const ActivityMonitorScreen(),
-    const SettingsScreen(),
+  final List<Widget> _screens = const [
+    ProductionMainScreen(),
+    ContextMenuManagerScreenV2(),
+    ActivityMonitorScreen(),
+    SettingsScreen(),
+  ];
+
+  // Labels and icons for compact (mobile) bottom navigation
+  static const _navItems = <({String label, IconData icon})>[
+    (label: 'Home', icon: Icons.home_outlined),
+    (label: 'Menus', icon: Icons.tune_outlined),
+    (label: 'Activity', icon: Icons.history_outlined),
+    (label: 'Settings', icon: Icons.settings_outlined),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final isCompact = size.width < 700; // Adaptive breakpoint for phones/tablets
+
+    if (isCompact) {
+      // Mobile-friendly layout: AppBar + PageView + BottomNavigationBar
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Instant AI Translator'),
+          centerTitle: true,
+        ),
+        body: _screens[_selectedIndex],
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+          destinations: [
+            for (final item in _navItems)
+              NavigationDestination(
+                icon: Icon(item.icon),
+                label: item.label,
+              ),
+          ],
+        ),
+      );
+    }
+
+    // Desktop/tablet wide layout (original)
     return Scaffold(
       body: Row(
         children: [

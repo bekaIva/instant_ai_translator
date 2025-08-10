@@ -365,69 +365,142 @@ class _ContextMenuManagerScreenV2State extends State<ContextMenuManagerScreenV2>
                                           ),
                                         ),
                                         const SizedBox(width: 8),
-                                        Text(
-                                          'Order: ${config.sortOrder}',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
+                                        Flexible(
+                                          child: Text(
+                                            'Order: ${config.sortOrder}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
                                   ],
                                 ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Test button
-                                    if (config.enabled)
-                                      IconButton(
-                                        icon: const Icon(Icons.play_arrow),
-                                        onPressed: () => _testMenuAction(config),
-                                        tooltip: 'Test with Sample Text',
-                                        color: Colors.green,
-                                      ),
-                                    // Enable/Disable toggle
-                                    Switch(
-                                      value: config.enabled,
-                                      onChanged: (value) => _toggleConfig(config.id, value),
-                                    ),
-                                    // More options
-                                    PopupMenuButton<String>(
-                                      onSelected: (value) {
-                                        switch (value) {
-                                          case 'edit':
-                                            _editConfig(config);
-                                            break;
-                                          case 'delete':
-                                            _deleteConfig(config.id);
-                                            break;
-                                        }
-                                      },
-                                      itemBuilder: (context) => [
-                                        const PopupMenuItem(
-                                          value: 'edit',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.edit),
-                                              SizedBox(width: 8),
-                                              Text('Edit'),
-                                            ],
+                                trailing: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final isCompact = MediaQuery.sizeOf(context).width < 400;
+
+                                    if (isCompact) {
+                                      // Collapse actions into a single overflow menu on phones
+                                      return PopupMenuButton<String>(
+                                        onSelected: (value) {
+                                          switch (value) {
+                                            case 'test':
+                                              _testMenuAction(config);
+                                              break;
+                                            case 'toggle':
+                                              _toggleConfig(config.id, !config.enabled);
+                                              break;
+                                            case 'edit':
+                                              _editConfig(config);
+                                              break;
+                                            case 'delete':
+                                              _deleteConfig(config.id);
+                                              break;
+                                          }
+                                        },
+                                        itemBuilder: (context) => [
+                                          if (config.enabled)
+                                            const PopupMenuItem(
+                                              value: 'test',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.play_arrow, color: Colors.green),
+                                                  SizedBox(width: 8),
+                                                  Text('Test'),
+                                                ],
+                                              ),
+                                            ),
+                                          PopupMenuItem(
+                                            value: 'toggle',
+                                            child: Row(
+                                              children: [
+                                                Icon(config.enabled ? Icons.toggle_on : Icons.toggle_off),
+                                                const SizedBox(width: 8),
+                                                Text(config.enabled ? 'Disable' : 'Enable'),
+                                              ],
+                                            ),
                                           ),
+                                          const PopupMenuItem(
+                                            value: 'edit',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.edit),
+                                                SizedBox(width: 8),
+                                                Text('Edit'),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'delete',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.delete, color: Colors.red),
+                                                SizedBox(width: 8),
+                                                Text('Delete'),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }
+
+                                    // Wide layout keeps explicit controls
+                                    return Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (config.enabled)
+                                          IconButton(
+                                            icon: const Icon(Icons.play_arrow),
+                                            onPressed: () => _testMenuAction(config),
+                                            tooltip: 'Test with Sample Text',
+                                            color: Colors.green,
+                                          ),
+                                        Switch(
+                                          value: config.enabled,
+                                          onChanged: (value) => _toggleConfig(config.id, value),
                                         ),
-                                        const PopupMenuItem(
-                                          value: 'delete',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.delete, color: Colors.red),
-                                              SizedBox(width: 8),
-                                              Text('Delete'),
-                                            ],
-                                          ),
+                                        PopupMenuButton<String>(
+                                          onSelected: (value) {
+                                            switch (value) {
+                                              case 'edit':
+                                                _editConfig(config);
+                                                break;
+                                              case 'delete':
+                                                _deleteConfig(config.id);
+                                                break;
+                                            }
+                                          },
+                                          itemBuilder: (context) => const [
+                                            PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit),
+                                                  SizedBox(width: 8),
+                                                  Text('Edit'),
+                                                ],
+                                              ),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.delete, color: Colors.red),
+                                                  SizedBox(width: 8),
+                                                  Text('Delete'),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
-                                    ),
-                                  ],
+                                    );
+                                  },
                                 ),
                                 isThreeLine: true,
                               ),
@@ -441,20 +514,50 @@ class _ContextMenuManagerScreenV2State extends State<ContextMenuManagerScreenV2>
   }
 
   Widget _buildStatusRow(String label, String value) {
+    final width = MediaQuery.sizeOf(context).width;
+    final isCompact = width < 480;
+
+    if (isCompact) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '$label:',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontFamily: 'monospace'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120,
+            width: 140,
             child: Text(
               '$label:',
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
-          Text(
-            value,
-            style: const TextStyle(fontFamily: 'monospace'),
+          Expanded(
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontFamily: 'monospace'),
+            ),
           ),
         ],
       ),

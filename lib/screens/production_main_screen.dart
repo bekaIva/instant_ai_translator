@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:io';
 import '../services/production_context_menu_service.dart';
 import '../services/context_menu_config_service.dart';
 
@@ -92,6 +93,9 @@ class _ProductionMainScreenState extends State<ProductionMainScreen> {
   @override
   Widget build(BuildContext context) {
     final systemStatus = _menuService.getStatus();
+    final size = MediaQuery.sizeOf(context);
+    final isCompact = size.width < 700;
+    final isAndroid = Platform.isAndroid;
 
     return Scaffold(
       appBar: AppBar(
@@ -126,36 +130,65 @@ class _ProductionMainScreenState extends State<ProductionMainScreen> {
                       children: [
                         Icon(Icons.smart_toy, color: Colors.indigo.shade700, size: 32),
                         const SizedBox(width: 12),
-                        Text(
-                          'AI-Powered Text Processing',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.indigo.shade700,
+                        Expanded(
+                          child: Text(
+                            'AI-Powered Text Processing',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: isCompact ? 20 : 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.indigo.shade700,
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Select text in any application and press Ctrl+Shift+M to access AI-powered text processing tools.',
-                      style: TextStyle(fontSize: 16),
+                    Text(
+                      isAndroid
+                          ? 'Select text in any app and tap "Instant AI Translator" from the selection menu.'
+                          : 'Select text in any application and press Ctrl+Shift+M to access AI-powered text processing tools.',
+                      style: const TextStyle(fontSize: 16),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Icon(Icons.keyboard, color: Colors.indigo.shade600),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Hotkey: Ctrl+Shift+M',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.indigo.shade600,
+                    isAndroid
+                        ? Row(
+                            children: [
+                              Icon(Icons.touch_app, color: Colors.indigo.shade600),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Android: Use the selection menu',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.indigo.shade600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Icon(Icons.keyboard, color: Colors.indigo.shade600),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Hotkey: Ctrl+Shift+M',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.indigo.shade600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -176,18 +209,22 @@ class _ProductionMainScreenState extends State<ProductionMainScreen> {
                           color: systemStatus['initialized'] ? Colors.green : Colors.red,
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'System Status',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        Expanded(
+                          child: Text(
+                            'System Status',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildStatusRow('Service Status', _systemStatus),
-                    _buildStatusRow('System Compatible', systemStatus['systemCompatible'] ? 'Yes' : 'No'),
-                    _buildStatusRow('Desktop Environment', systemStatus['desktopEnvironment'] ?? 'Unknown'),
-                    _buildStatusRow('Active Menus', '${systemStatus['activeMenus'] ?? 0}'),
-                    _buildStatusRow('Monitoring', systemStatus['monitoring'] ? 'Active' : 'Inactive'),
+                    _buildStatusRow(context, 'Service Status', _systemStatus),
+                    _buildStatusRow(context, 'System Compatible', systemStatus['systemCompatible'] ? 'Yes' : 'No'),
+                    _buildStatusRow(context, 'Desktop Environment', systemStatus['desktopEnvironment'] ?? 'Unknown'),
+                    _buildStatusRow(context, 'Active Menus', '${systemStatus['activeMenus'] ?? 0}'),
+                    _buildStatusRow(context, 'Monitoring', systemStatus['monitoring'] ? 'Active' : 'Inactive'),
                   ],
                 ),
               ),
@@ -205,9 +242,13 @@ class _ProductionMainScreenState extends State<ProductionMainScreen> {
                       children: [
                         Icon(Icons.menu, color: Colors.blue.shade700),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Active Menu Items',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        Expanded(
+                          child: Text(
+                            'Active Menu Items',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ],
                     ),
@@ -244,11 +285,14 @@ class _ProductionMainScreenState extends State<ProductionMainScreen> {
                       children: [
                         Icon(Icons.history, color: Colors.green.shade700),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Recent Actions',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        Expanded(
+                          child: Text(
+                            'Recent Actions',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
                         ),
-                        const Spacer(),
                         if (_recentActions.isNotEmpty)
                           TextButton(
                             onPressed: () async {
@@ -267,7 +311,7 @@ class _ProductionMainScreenState extends State<ProductionMainScreen> {
                       )
                     else
                       SizedBox(
-                        height: 200,
+                        height: isCompact ? 160 : 200,
                         child: ListView.builder(
                           itemCount: _recentActions.length,
                           itemBuilder: (context, index) {
@@ -336,11 +380,14 @@ class _ProductionMainScreenState extends State<ProductionMainScreen> {
                       children: [
                         Icon(Icons.terminal, color: Colors.grey.shade700),
                         const SizedBox(width: 8),
-                        const Text(
-                          'System Logs',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        Expanded(
+                          child: Text(
+                            'System Logs',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
                         ),
-                        const Spacer(),
                         if (_logs.isNotEmpty)
                           TextButton(
                             onPressed: () async {
@@ -353,7 +400,7 @@ class _ProductionMainScreenState extends State<ProductionMainScreen> {
                     ),
                     const SizedBox(height: 12),
                     Container(
-                      height: 200,
+                      height: isCompact ? 160 : 200,
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: Colors.black,
@@ -394,14 +441,37 @@ class _ProductionMainScreenState extends State<ProductionMainScreen> {
     );
   }
 
-  Widget _buildStatusRow(String label, String value) {
+  Widget _buildStatusRow(BuildContext context, String label, String value) {
+    final width = MediaQuery.sizeOf(context).width;
+    final isCompact = width < 480;
+
+    if (isCompact) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '$label:',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: const TextStyle(fontFamily: 'monospace'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 140,
+            width: 160,
             child: Text(
               '$label:',
               style: const TextStyle(fontWeight: FontWeight.w500),

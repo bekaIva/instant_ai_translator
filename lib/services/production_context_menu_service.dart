@@ -91,7 +91,26 @@ class ProductionContextMenuService {
       _activeConfigs = configs;
       _addLog('📋 Loaded ${configs.length} enabled menu configurations');
 
-      // Initialize system integration
+      // Android path: use Process Text integration (no native FFI)
+      if (Platform.isAndroid) {
+        _addLog('📱 Android detected: using Process Text OS integration (no native FFI)');
+        // Test Gemini AI connection
+        _addLog('🔍 Testing Gemini AI connection...');
+        final aiConnected = await GeminiAIService.testConnection();
+        if (aiConnected) {
+          _addLog('✅ Gemini AI connection successful');
+        } else {
+          _addLog('⚠️  Gemini AI connection failed - text processing may fail without valid API configuration');
+        }
+
+        _initialized = true;
+        _monitoring = true; // Represent OS-level availability as "Active"
+        _updateStatus('Ready (Android Process Text)');
+        _addLog('✅ Android mode initialized (Process Text)');
+        return true;
+      }
+
+      // Initialize system integration (Linux)
       final success = await _systemIntegration.initialize();
       if (!success) {
         _addLog('❌ Failed to initialize system integration');
@@ -133,6 +152,13 @@ class ProductionContextMenuService {
   // Register menu items with the native system
   Future<bool> _registerMenuItems() async {
     try {
+      // Android uses the OS "Process Text" integration; no native registration needed.
+      if (Platform.isAndroid) {
+        _addLog('📱 Android: skipping native menu registration (Process Text integration)');
+        _updateStatus('Ready (Android mode)');
+        return true;
+      }
+
       final menuItems = _activeConfigs
           .map(
             (config) => MenuItemInfo(
@@ -328,10 +354,10 @@ class ProductionContextMenuService {
   Map<String, dynamic> getStatus() {
     return {
       'initialized': _initialized,
-      'monitoring': _monitoring,
+      'monitoring': Platform.isAndroid ? true : _monitoring,
       'activeMenus': _activeConfigs.length,
-      'systemCompatible': _systemIntegration.isSystemCompatible(),
-      'desktopEnvironment': _systemIntegration.getDesktopEnvironment(),
+      'systemCompatible': Platform.isAndroid ? true : _systemIntegration.isSystemCompatible(),
+      'desktopEnvironment': Platform.isAndroid ? 'Android' : _systemIntegration.getDesktopEnvironment(),
       'aiService': GeminiAIService.getApiInfo(),
     };
   }

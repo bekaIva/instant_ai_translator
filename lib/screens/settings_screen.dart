@@ -226,16 +226,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 32),
             
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
               children: [
                 ElevatedButton(
                   onPressed: _saveSettings,
                   child: const Text('Save Settings'),
                 ),
-                const SizedBox(width: 16),
                 OutlinedButton(
                   onPressed: _testingConnection ? null : _testConnection,
-                  child: _testingConnection 
+                  child: _testingConnection
                       ? const SizedBox(
                           width: 16,
                           height: 16,
@@ -243,7 +244,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         )
                       : const Text('Test Connection'),
                 ),
-                const SizedBox(width: 16),
                 OutlinedButton(
                   onPressed: _resetToDefaults,
                   child: const Text('Reset to Defaults'),

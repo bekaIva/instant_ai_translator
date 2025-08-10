@@ -158,7 +158,7 @@ class _ActivityMonitorScreenState extends State<ActivityMonitorScreen> {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,16 +174,17 @@ class _ActivityMonitorScreenState extends State<ActivityMonitorScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Expanded(
-              child: _activities.isEmpty
-                  ? _buildEmptyState()
-                  : ListView.builder(
-                      itemCount: _activities.length,
-                      itemBuilder: (context, index) {
-                        return _buildActivityCard(_activities[index]);
-                      },
-                    ),
-            ),
+            if (_activities.isEmpty)
+              _buildEmptyState()
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _activities.length,
+                itemBuilder: (context, index) {
+                  return _buildActivityCard(_activities[index]);
+                },
+              ),
           ],
         ),
       ),
@@ -226,6 +227,47 @@ class _ActivityMonitorScreenState extends State<ActivityMonitorScreen> {
   }
 
   Widget _buildStatsRow() {
+    final width = MediaQuery.sizeOf(context).width;
+    final isCompact = width < 700;
+
+    if (isCompact) {
+      // Stack the cards vertically on phones for readability
+      return Column(
+        children: [
+          _buildStatCard(
+            'Today',
+            '${_stats.todayActivities}',
+            Icons.today,
+            Colors.blue,
+          ),
+          const SizedBox(height: 12),
+          _buildStatCard(
+            'Avg. Time',
+            '${_stats.averageProcessingTime.toStringAsFixed(1)}s',
+            Icons.timer,
+            Colors.green,
+          ),
+          const SizedBox(height: 12),
+          _buildStatCard(
+            'Most Used',
+            _getMostUsedOperationDisplayName(),
+            Icons.trending_up,
+            Colors.orange,
+          ),
+          const SizedBox(height: 12),
+          _buildStatCard(
+            'Success Rate',
+            _stats.totalActivities > 0
+                ? '${((_stats.successfulActivities / _stats.totalActivities) * 100).toStringAsFixed(0)}%'
+                : '0%',
+            Icons.check_circle,
+            Colors.green,
+          ),
+        ],
+      );
+    }
+
+    // Wide layout (desktop/tablet): row of four cards
     return Row(
       children: [
         Expanded(
@@ -258,7 +300,7 @@ class _ActivityMonitorScreenState extends State<ActivityMonitorScreen> {
         Expanded(
           child: _buildStatCard(
             'Success Rate',
-            _stats.totalActivities > 0 
+            _stats.totalActivities > 0
                 ? '${((_stats.successfulActivities / _stats.totalActivities) * 100).toStringAsFixed(0)}%'
                 : '0%',
             Icons.check_circle,
