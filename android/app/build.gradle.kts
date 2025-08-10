@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -9,6 +12,28 @@ android {
     namespace = "com.example.instant_ai_translator"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+
+    // Load keystore properties for release signing if present
+    val keystoreProperties = Properties()
+    val keystorePropertiesFile = rootProject.file("key.properties")
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    }
+
+    signingConfigs {
+        // Release signing config (only configured if key.properties exists)
+        create("release") {
+            if (keystoreProperties.isNotEmpty()) {
+                val storeFileProp = keystoreProperties["storeFile"]?.toString()
+                if (!storeFileProp.isNullOrBlank()) {
+                    storeFile = file(storeFileProp)
+                }
+                storePassword = keystoreProperties["storePassword"]?.toString()
+                keyAlias = keystoreProperties["keyAlias"]?.toString()
+                keyPassword = keystoreProperties["keyPassword"]?.toString()
+            }
+        }
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -32,9 +57,9 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Use the provided release keystore if available, otherwise fall back to debug for local builds.
+            val hasReleaseKeystore = signingConfigs.findByName("release")?.storeFile?.exists() == true
+            signingConfig = if (hasReleaseKeystore) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }
     }
 }

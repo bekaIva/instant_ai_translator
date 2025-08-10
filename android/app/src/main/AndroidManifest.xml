@@ -52,7 +52,19 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-    </application>
+            <!-- Share target so our action appears in apps that surface share targets (e.g., Slack) -->
+            <activity
+                android:name=".ShareToInstantAIActivity"
+                android:exported="true"
+                android:label="Instant AI Translator">
+                <intent-filter>
+                    <action android:name="android.intent.action.SEND" />
+                    <category android:name="android.intent.category.DEFAULT" />
+                    <data android:mimeType="text/plain" />
+                    <data android:mimeType="text/*" />
+                </intent-filter>
+            </activity>
+        </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
          https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
