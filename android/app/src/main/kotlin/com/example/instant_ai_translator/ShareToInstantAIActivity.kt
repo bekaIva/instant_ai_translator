@@ -8,6 +8,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.view.ViewGroup
 
 /**
  * Share target for ACTION_SEND so our action appears in apps (like Slack) that promote
@@ -21,6 +25,38 @@ import android.widget.Toast
  * - Presents the result with "Copy" and "Share Result" options
  */
 class ShareToInstantAIActivity : Activity() {
+
+    private var loadingDialog: AlertDialog? = null
+
+    private fun showLoading(message: String = "Processing…") {
+        dismissLoading()
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(padding, padding, padding, padding)
+            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        }
+        val progress = ProgressBar(this).apply {
+            isIndeterminate = true
+        }
+        val msg = TextView(this).apply {
+            text = message
+            setPadding((12 * resources.displayMetrics.density).toInt(), 0, 0, 0)
+        }
+        container.addView(progress)
+        container.addView(msg)
+
+        loadingDialog = AlertDialog.Builder(this)
+            .setTitle("Instant AI Translator")
+            .setView(container)
+            .setCancelable(false)
+            .create().also { it.show() }
+    }
+
+    private fun dismissLoading() {
+        loadingDialog?.dismiss()
+        loadingDialog = null
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,7 +98,6 @@ class ShareToInstantAIActivity : Activity() {
 
         AlertDialog.Builder(this)
             .setTitle("Instant AI Translator")
-            .setMessage(previewOf(sourceText))
             .setItems(labels) { _, which ->
                 val selected = items[which]
                 processWithOperation(sourceText, selected.third)
@@ -80,43 +115,48 @@ class ShareToInstantAIActivity : Activity() {
 
         AlertDialog.Builder(this)
             .setTitle("Instant AI Translator")
-            .setMessage(previewOf(sourceText))
             .setItems(actions) { _, which ->
                 val result = when (which) {
                     0 -> sourceText.uppercase()
                     1 -> "[AI] $sourceText"
                     else -> sourceText
                 }
-                showResultActions(result)
+                showResultActions(result, sourceText)
             }
             .setOnCancelListener { finish() }
             .show()
     }
 
     private fun processWithOperation(sourceText: String, operation: String) {
+        // Show loading indicator while headless Flutter processes text
+        showLoading("Processing…")
+ 
         // Offload to Flutter for AI processing
         FlutterProcessor.processText(
             context = this,
             text = sourceText,
             operation = operation
         ) { result, error ->
+            // Always hide the loading dialog on callback
+            dismissLoading()
+ 
             if (error != null) {
                 Toast.makeText(this, "Processing failed: ${error.message}", Toast.LENGTH_LONG).show()
-                showResultActions("ERROR: ${error.message}")
+                showResultActions("ERROR: ${error.message}", sourceText)
                 return@processText
             }
-
+ 
             val processed = result?.trim().orEmpty()
             if (processed.isEmpty()) {
                 Toast.makeText(this, "Empty result", Toast.LENGTH_SHORT).show()
                 finish()
             } else {
-                showResultActions(processed)
+                showResultActions(processed, sourceText)
             }
         }
     }
 
-    private fun showResultActions(result: String) {
+    private fun showResultActions(result: String, originalText: String) {
         AlertDialog.Builder(this)
             .setTitle("Processed Result")
             .setMessage(result)
@@ -129,11 +169,26 @@ class ShareToInstantAIActivity : Activity() {
                 shareText(result)
                 finish()
             }
-            .setNegativeButton("Close") { _, _ ->
-                finish()
+            // Use Negative button slot for "Reprocess" (Cancel/back will still close)
+            .setNegativeButton("Reprocess") { _, _ ->
+                reopenMenuFor(originalText)
             }
             .setOnCancelListener { finish() }
             .show()
+    }
+
+    private fun reopenMenuFor(sourceText: String) {
+        val configs = ConfigReader.getEnabledConfigs(this)
+        val menuItems = configs
+            .filter { it.enabled }
+            .sortedBy { it.sortOrder }
+            .map { Triple(it.id, it.label, it.operation) }
+
+        if (menuItems.isEmpty()) {
+            showFallbackMenu(sourceText)
+        } else {
+            showDynamicMenu(sourceText, menuItems)
+        }
     }
 
     private fun previewOf(text: String): String {
@@ -154,5 +209,9 @@ class ShareToInstantAIActivity : Activity() {
             putExtra(Intent.EXTRA_TEXT, value)
         }
         startActivity(Intent.createChooser(share, "Share processed text"))
+    }
+    override fun onDestroy() {
+        dismissLoading()
+        super.onDestroy()
     }
 }

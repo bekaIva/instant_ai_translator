@@ -11,7 +11,8 @@ plugins {
 android {
     namespace = "com.example.instant_ai_translator"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Override to satisfy plugins requiring newer NDK (backward compatible)
+    ndkVersion = "27.0.12077973"
 
     // Load keystore properties for release signing if present
     val keystoreProperties = Properties()

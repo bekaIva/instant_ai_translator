@@ -24,6 +24,10 @@ class ProcessTextActivity : Activity() {
     private lateinit var statusText: TextView
     private var isProcessing = false
 
+    // Keep original selection and read-only flag so "Reprocess" applies to original (no chaining)
+    private lateinit var originalText: String
+    private var readOnly: Boolean = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -36,8 +40,12 @@ class ProcessTextActivity : Activity() {
             return
         }
 
-        setContentView(buildUi(selectedText, isReadOnly))
-        populateActions(selectedText, isReadOnly)
+        // Persist for reprocessing without chaining
+        originalText = selectedText
+        readOnly = isReadOnly
+
+        setContentView(buildUi(originalText, readOnly))
+        populateActions(originalText, readOnly)
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
@@ -166,10 +174,8 @@ class ProcessTextActivity : Activity() {
             if (error != null) {
                 setLoading(false, "Error: ${error.message ?: "Unknown error"}")
                 Toast.makeText(this, "Processing failed", Toast.LENGTH_SHORT).show()
-                // In read-only, copy the error text to clipboard to keep parity with Linux behavior
-                if (isReadOnly) {
-                    copyAndFinish("ERROR: ${error.message ?: "Processing failed"}")
-                }
+                // Show result screen to allow Copy or Reprocess (applies to original text)
+                showResultScreen("ERROR: ${error.message ?: "Processing failed"}")
                 return@processText
             }
             val output = (result ?: "").ifEmpty { selectedText }
@@ -179,17 +185,12 @@ class ProcessTextActivity : Activity() {
     }
 
     private fun handleResult(result: String, readOnly: Boolean) {
-        if (!readOnly) {
-            // Return replacement text to the calling app
-            setResult(
-                RESULT_OK,
-                Intent().putExtra(Intent.EXTRA_PROCESS_TEXT, result)
-            )
-            finish()
-        } else {
-            // Read-only: copy to clipboard and exit
-            copyAndFinish(result)
-        }
+        // Show an interstitial result screen with actions:
+        // - Apply (editable only): return replacement and finish
+        // - Copy: copy and finish
+        // - Reprocess: go back to operations and run again on ORIGINAL text (no chaining)
+        // - Close: finish
+        showResultScreen(result)
     }
 
     private fun copyAndFinish(text: String) {
@@ -198,5 +199,91 @@ class ProcessTextActivity : Activity() {
         Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show()
         setResult(RESULT_CANCELED)
         finish()
+    }
+
+    private fun showResultScreen(result: String) {
+        // Build a simple result UI dynamically
+        val root = ScrollView(this)
+        container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+        root.addView(container)
+
+        val title = TextView(this).apply {
+            text = "Processed Result"
+            textSize = 20f
+        }
+        val resultView = TextView(this).apply {
+            text = result
+            setPadding(0, dp(8), 0, dp(16))
+            // Allow users to select result text
+            setTextIsSelectable(true)
+        }
+
+        container.addView(title)
+        container.addView(resultView)
+
+        // Buttons
+        if (!readOnly) {
+            val applyBtn = Button(this).apply {
+                text = "Apply"
+                isAllCaps = false
+                setOnClickListener {
+                    // Return replacement text to the calling app
+                    setResult(
+                        RESULT_OK,
+                        Intent().putExtra(Intent.EXTRA_PROCESS_TEXT, result)
+                    )
+                    finish()
+                }
+            }
+            container.addView(applyBtn)
+        }
+
+        val copyBtn = Button(this).apply {
+            text = "Copy"
+            isAllCaps = false
+            setOnClickListener {
+                val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("Processed Text", result))
+                Toast.makeText(this@ProcessTextActivity, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+                // Finish and return to source app
+                setResult(RESULT_CANCELED)
+                finish()
+            }
+        }
+        container.addView(copyBtn)
+
+        val reprocessBtn = Button(this).apply {
+            text = "Reprocess"
+            isAllCaps = false
+            setOnClickListener {
+                reopenActionMenu()
+            }
+        }
+        container.addView(reprocessBtn)
+
+        val closeBtn = Button(this).apply {
+            text = "Close"
+            isAllCaps = false
+            setOnClickListener {
+                setResult(RESULT_CANCELED)
+                finish()
+            }
+        }
+        container.addView(closeBtn)
+
+        setContentView(root)
+    }
+
+    private fun reopenActionMenu() {
+        // Rebuild initial screen and repopulate actions using ORIGINAL text (no chaining)
+        setContentView(buildUi(originalText, readOnly))
+        populateActions(originalText, readOnly)
     }
 }
